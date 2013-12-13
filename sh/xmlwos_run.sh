@@ -24,9 +24,11 @@ do
     $cisis_dir/mx iso=../iso/$coll/artigo.iso append=../databases/isis/artigo -all now
     $cisis_dir/mx iso=../iso/$coll/title.iso append=../databases/isis/title -all now
     $cisis_dir/mx iso=../iso/$coll/bib4cit.iso append=../databases/isis/bib4cit -all now
-    rm ../iso/$coll/artigo.iso
-    rm ../iso/$coll/title.iso
-    rm ../iso/$coll/bib4cit.iso
+    if [[ $mode == "scp" ]]; then
+        rm ../iso/$coll/artigo.iso
+        rm ../iso/$coll/title.iso
+        rm ../iso/$coll/bib4cit.iso
+    fi
 done
 
 echo "Indexing databases according to FSTs"
