@@ -36,8 +36,6 @@ $cisis_dir/mx ../databases/isis/artigo  fst="@../fst/artigo.fst"  fullinv/ansi=.
 $cisis_dir/mx ../databases/isis/title   fst="@../fst/title.fst"   fullinv/ansi=../databases/isis/title   tell=10    -all now
 $cisis_dir/mx ../databases/isis/bib4cit fst="@../fst/bib4cit.fst" fullinv/ansi=../databases/isis/bib4cit tell=10000 -all now
 
-exit
-
 echo "Creating articles processing list"
 from=$1
 count=$2
