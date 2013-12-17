@@ -1,4 +1,4 @@
-. xmlwos_config.sh
+. config.sh
 
 echo "Script running with CISIS version:"
 $cisis_dir/mx what
