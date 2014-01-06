@@ -1,4 +1,7 @@
-. config.sh
+# Path for the script root directory
+processing_path="/var/www/isis2mongodb"
+
+. $processing_path/sh/config.sh
 
 echo "Script running with CISIS version:"
 $cisis_dir/mx what
@@ -8,7 +11,7 @@ mkdir -p $processing_path/iso
 mkdir -p $processing_path/tmp
 mkdir -p $processing_path/output
 
-colls=`ls -1 ../iso`
+colls=`ls -1 $processing_path/iso`
 rm -f $processing_path/databases/isis/artigo.*
 rm -f $processing_path/databases/isis/title.*
 rm -f $processing_path/databases/isis/bib4cit.*
@@ -81,5 +84,3 @@ do
         echo "article alread processed!!!"
     fi
 done
-
-deactivate

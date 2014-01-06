@@ -1,6 +1,3 @@
-# Path for the script root directory
-processing_path="/var/www/isis2mongodb"
-
 # Path for a CISIS Tools
 cisis_dir="/usr/local/bireme/cisis/5.4.pre04/lindG4/"
 
