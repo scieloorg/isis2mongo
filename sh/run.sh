@@ -1,5 +1,5 @@
 # Path for the script root directory
-processing_path="/var/www/isis2mongodb"
+processing_path="/bases/isis2mongodb"
 
 . $processing_path/sh/config.sh
 
