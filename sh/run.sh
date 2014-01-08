@@ -25,7 +25,7 @@ do
         scp $processing_user@$processing_server:/bases/org.000/iso/b4c.$coll/bib4cit.iso $processing_path/iso/$coll/bib4cit.iso
     fi
     $cisis_dir/mx iso=$processing_path/iso/$coll/artigo.iso append=$processing_path/databases/isis/artigo -all now
-    $cisis_dir/mx iso=$processing_path/iso/$coll/title.iso append=$processing_path/databases/isis/title -all now
+    $cisis_dir/mx iso=$processing_path/iso/$coll/title.iso "proc='a992#$coll#'" append=$processing_path/databases/isis/title -all now
     $cisis_dir/mx iso=$processing_path/iso/$coll/bib4cit.iso append=$processing_path/databases/isis/bib4cit -all now
     if [[ $mode == "scp" ]]; then
         rm $processing_path/iso/$coll/artigo.iso
