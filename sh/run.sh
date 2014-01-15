@@ -77,6 +77,7 @@ do
             python isis2json.py $processing_path/output/isos/$pid/$pid"_artigo.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_artigo.json"
             python isis2json.py $processing_path/output/isos/$pid/$pid"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_title.json"
             python isis2json.py $processing_path/output/isos/$pid/$pid"_bib4cit.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_bib4cit.json"
+            python packing_json.py $pid
             curl -X POST "http://"$scielo_data_url"/api/v1/article?code="$pid
             rm -rf $processing_path/output/isos/$pid
         fi
