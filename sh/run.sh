@@ -64,7 +64,7 @@ do
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
 
-    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/is_loaded?code="$pid`
+    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists?code="$pid`
     if [[ $loaded == "False" ]]; then
         mkdir -p $processing_path/output/isos/$pid
         issn=${pid:1:9}

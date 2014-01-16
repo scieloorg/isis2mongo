@@ -11,7 +11,7 @@ def packing_json(pid):
         citations_raw_json = json.loads(open(
             '../output/isos/{0}/{1}_bib4cit.json'.format(pid, pid)).read())
 
-        packed_json['citations'] = citations_raw_json['docs'][0]
+        packed_json['citations'] = citations_raw_json['docs']
     except:
         packed_json['citations'] = None
 
