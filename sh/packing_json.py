@@ -1,5 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/python2.7
 #encode: utf-8
+
 import sys
 import os
 import json

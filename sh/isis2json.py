@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/python2.7
 # -*- encoding: utf-8 -*-
 
 # isis2json.py: convert ISIS and ISO-2709 files to JSON
