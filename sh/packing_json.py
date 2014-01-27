@@ -6,7 +6,17 @@ import os
 import json
 
 
-def packing_json(pid):
+def packing_journal_json(pid):
+    try:
+        citations_raw_json = json.loads(open(
+            '../output/isos/{0}/{1}_title.json'.format(pid, pid)).read())
+
+        return citations_raw_json['docs'][0]
+    except:
+        return None
+
+
+def packing_article_json(pid):
     packed_json = {}
     try:
         citations_raw_json = json.loads(open(
@@ -33,4 +43,7 @@ def packing_json(pid):
     return json.dumps(packed_json)
 
 if __name__ == '__main__':
-    print packing_json(sys.argv[1])
+    if sys.argv[1] == 'article':
+        print packing_article_json(sys.argv[2])
+    if sys.argv[1] == 'journal':
+        print packing_journal_json(sys.argv[2])
