@@ -45,9 +45,9 @@ $cisis_dir/mx $processing_path/databases/isis/artigo "pft=if p(v880) then,v880,f
 
 echo "Creating json files for each article"
 mkdir -p $processing_path/output/isos/
-total_pids=`wc -l $processing_path/tmp/new_identifiers.txt`
+total_pids=`wc -l $processing_path/sh/new_identifiers.txt`
 from=1
-for pid in `cat $processing_path/tmp/new_identifiers.txt`;
+for pid in `cat $processing_path/sh/new_identifiers.txt`;
 do
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
