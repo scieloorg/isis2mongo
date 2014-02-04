@@ -39,8 +39,6 @@ $cisis_dir/mx $processing_path/databases/isis/artigo  fst="@$processing_path/fst
 $cisis_dir/mx $processing_path/databases/isis/title   fst="@$processing_path/fst/title.fst"   fullinv/ansi=$processing_path/databases/isis/title   tell=10    -all now
 $cisis_dir/mx $processing_path/databases/isis/bib4cit fst="@$processing_path/fst/bib4cit.fst" fullinv/ansi=$processing_path/databases/isis/bib4cit tell=10000 -all now
 
-
-articles_processing_list="aplf.txt"
 $cisis_dir/mx $processing_path/databases/isis/artigo "pft=if p(v880) then,v880,fi,/" -all now > $processing_path/sh/legacy_identifiers.txt
 
 ./loading_ids.py
