@@ -53,8 +53,7 @@ do
     from=$(($from+1))
 
     loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists?code="$pid`
-    echo $loaded
-    if [[ $loaded == "False" ]]; then
+    if [[ $loaded == "false" ]]; then
         mkdir -p $processing_path/output/isos/$pid
         issn=${pid:1:9}
         len=${#pid}

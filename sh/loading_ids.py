@@ -22,7 +22,7 @@ def articlemeta_identifiers():
                 return identifiers
 
             for identifier in request['objects']:
-                f.write('{0}\r\n'.format(identifier.strip()))
+                f.write('{0}\n'.format(identifier.strip()))
                 identifiers.add(identifier.strip())
 
             offset += 1000
@@ -51,7 +51,7 @@ def main():
 
     with open('new_identifiers.txt', 'w') as f:
         for identifier in difference:
-            f.write('{0}\r\n'.format(identifier))
+            f.write('{0}\n'.format(identifier))
 
 
 if __name__ == '__main__':
