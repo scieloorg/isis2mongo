@@ -39,27 +39,17 @@ $cisis_dir/mx $processing_path/databases/isis/artigo  fst="@$processing_path/fst
 $cisis_dir/mx $processing_path/databases/isis/title   fst="@$processing_path/fst/title.fst"   fullinv/ansi=$processing_path/databases/isis/title   tell=10    -all now
 $cisis_dir/mx $processing_path/databases/isis/bib4cit fst="@$processing_path/fst/bib4cit.fst" fullinv/ansi=$processing_path/databases/isis/bib4cit tell=10000 -all now
 
-echo "Creating articles processing list"
-from=$1
-count=$2
-range=""
 
-if [[ $from != "" ]]; then
-    range="from="$from
-fi
+articles_processing_list="aplf.txt"
+$cisis_dir/mx $processing_path/databases/isis/artigo "pft=if p(v880) then,v880,fi,/" -all now > $processing_path/sh/legacy_identifiers.txt
 
-if [[ $count != "" ]]; then
-    range=$range" count="$count
-fi
-
-articles_processing_list="aplf"$from"c"$count".txt"
-$cisis_dir/mx $processing_path/databases/isis/artigo "pft=if p(v880) then,v880,fi,/" $range -all now > $processing_path/tmp/$articles_processing_list
+./loading_ids.py
 
 echo "Creating json files for each article"
 mkdir -p $processing_path/output/isos/
-total_pids=`wc -l $processing_path/tmp/$articles_processing_list`
+total_pids=`wc -l $processing_path/tmp/new_identifiers.txt`
 from=1
-for pid in `cat $processing_path/tmp/$articles_processing_list`;
+for pid in `cat $processing_path/tmp/new_identifiers.txt`;
 do
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
