@@ -1,6 +1,8 @@
 # Path for the script root directory
 processing_path="/bases/isis2mongo"
 
+cd $processing_path
+
 . $processing_path/sh/config.sh
 
 echo "Script running with CISIS version:"
