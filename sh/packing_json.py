@@ -11,7 +11,7 @@ def packing_journal_json(pid):
         citations_raw_json = json.loads(open(
             '../output/isos/{0}/{1}_title.json'.format(pid, pid)).read())
 
-        return citations_raw_json['docs'][0]
+        return json.dumps(citations_raw_json['docs'][0])
     except:
         return None
 
