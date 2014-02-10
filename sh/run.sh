@@ -43,7 +43,9 @@ $cisis_dir/mx $processing_path/databases/isis/bib4cit fst="@$processing_path/fst
 
 $cisis_dir/mx $processing_path/databases/isis/artigo "pft=if p(v880) then,v880,fi,/" -all now > $processing_path/sh/legacy_identifiers.txt
 
+cd sh
 ./loading_ids.py
+cd ..
 
 echo "Creating json files for each article"
 mkdir -p $processing_path/output/isos/
@@ -63,11 +65,12 @@ do
             $cisis_dir/mx $processing_path/databases/isis/artigo  btell="0" pid=$pid   iso=$processing_path/output/isos/$pid/$pid"_artigo.iso" -all now
             $cisis_dir/mx $processing_path/databases/isis/title   btell="0" $issn      iso=$processing_path/output/isos/$pid/$pid"_title.iso" -all now
             $cisis_dir/mx $processing_path/databases/isis/bib4cit btell="0" $pid"$"    iso=$processing_path/output/isos/$pid/$pid"_bib4cit.iso" -all now
-
+            cd sh
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_artigo.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_artigo.json"
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_title.json"
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_bib4cit.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_bib4cit.json"
             ./packing_json.py 'article' $pid > $processing_path/output/isos/$pid/$pid"_package.json"
+            cd ..
             curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/article/add"
             rm -rf $processing_path/output/isos/$pid
         fi
@@ -83,10 +86,13 @@ $cisis_dir/mx $processing_path/databases/isis/title "pft=v400,/" -all now > issn
 itens=`cat issns.txt`
 
 for issn in $itens; do
+   echo "Updating: "$issn 
    mkdir -p $processing_path/output/isos/$issn
    $cisis_dir/mx $processing_path/databases/isis/title btell="0" $issn iso=$processing_path/output/isos/$issn/$issn"_title.iso" -all now
+   cd sh
    ./isis2json.py $processing_path/output/isos/$issn/$issn"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$issn/$issn"_title.json"
    ./packing_json.py 'journal' $issn > $processing_path/output/isos/$issn/$issn"_package.json"
+   cd ..
    curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$issn/$issn"_package.json" -X POST "http://"$scielo_data_url"/api/v1/journal/add"
    rm -rf $processing_path/output/isos/$issn
 done
