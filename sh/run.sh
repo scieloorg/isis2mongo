@@ -81,10 +81,16 @@ done
 
 echo "Removing exceded files from Article Meta"
 
-for pid in `cat $processing_path/sh/to_remove_identifiers.txt`;
-do
-  curl -X DELETE "http://"$scielo_data_url"/api/v1/article/delete?code=$pid&admintoken=$admintoken"
-done
+tot_to_remove=`cat $processing_path/sh/to_remove_identifiers.txt | wc -l`
+
+if [[ $tot < 1000 ]]; then
+    for pid in `cat $processing_path/sh/to_remove_identifiers.txt`;
+    do
+      curl -X DELETE "http://"$scielo_data_url"/api/v1/article/delete?code=$pid&admintoken=$admintoken"
+    done
+else
+  echo "To many files to remove. I will not remove then, please check it before"
+fi
 
 echo "Updating title database"
 
