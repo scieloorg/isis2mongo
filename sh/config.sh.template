@@ -3,6 +3,7 @@ cisis_dir="/usr/local/bireme/cisis/5.4.pre04/lindG4/"
 
 # Path to SciELO Articles API
 scielo_data_url="localhost:7000"
+admintoken=""
 
 # parameters used when mode = scp
 # It is pre-requirement to have a trust relationship between the servers to use this mode

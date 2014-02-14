@@ -79,6 +79,13 @@ do
     fi
 done
 
+echo "Removing exceded files from Article Meta"
+
+for pid in `cat $processing_path/sh/to_remove_identifiers.txt`;
+do
+  curl -X DELETE "http://"$scielo_data_url"/api/v1/article/remove?code=$pid&admintoken=$admintoken"
+done
+
 echo "Updating title database"
 
 $cisis_dir/mx $processing_path/databases/isis/title "pft=v400,/" -all now > issns.txt
