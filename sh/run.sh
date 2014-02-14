@@ -83,7 +83,7 @@ echo "Removing exceded files from Article Meta"
 
 for pid in `cat $processing_path/sh/to_remove_identifiers.txt`;
 do
-  curl -X DELETE "http://"$scielo_data_url"/api/v1/article/remove?code=$pid&admintoken=$admintoken"
+  curl -X DELETE "http://"$scielo_data_url"/api/v1/article/delete?code=$pid&admintoken=$admintoken"
 done
 
 echo "Updating title database"
