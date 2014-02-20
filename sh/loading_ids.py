@@ -44,7 +44,7 @@ def new_identifiers(legacy, articlemeta):
 
 
 def to_remove_identifiers(legacy, articlemeta):
-    legacy.difference_update(articlemeta)
+    articlemeta.difference_update(legacy)
 
     return legacy
 
