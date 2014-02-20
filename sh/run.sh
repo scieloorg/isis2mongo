@@ -83,7 +83,7 @@ echo "Removing exceded files from Article Meta"
 
 tot_to_remove=`cat $processing_path/sh/to_remove_identifiers.txt | wc -l`
 
-if [[ $tot_to_remove < 1000 ]]; then
+if (($tot_to_remove < 1000)); then
     for pid in `cat $processing_path/sh/to_remove_identifiers.txt`;
     do
       curl -X DELETE "http://"$scielo_data_url"/api/v1/article/delete?code=$pid&admintoken=$admintoken"
