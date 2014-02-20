@@ -9,23 +9,28 @@ import urllib2
 ARTICLEMETAAPI = 'http://nefertiti.scielo.org:7000'
 
 
-def articlemeta_identifiers():
+def articlemeta_identifiers(offset_range=1000):
     identifiers = []
     offset = 0
 
     with open('articlemeta_identifiers.txt', 'w') as f:
         while True:
-            url = '{0}/api/v1/article/identifiers?offset={1}'.format(ARTICLEMETAAPI, str(offset))
+            url = '{0}/api/v1/article/identifiers?offset={1}'.format(
+                ARTICLEMETAAPI, str(offset)
+            )
             print url
             request = json.loads(urllib2.urlopen(url).read())
             if len(request['objects']) == 0:
                 return identifiers
 
             for identifier in request['objects']:
-                f.write('{0}\n'.format(identifier.strip()))
+                f.write('{0}\n'.format(
+                    identifier['collection'].strip(),
+                    identifier['code'].strip())
+                )
                 identifiers.append(identifier.strip())
 
-            offset += 1000
+            offset += offset_range
 
 
 def legacy_identifiers():
