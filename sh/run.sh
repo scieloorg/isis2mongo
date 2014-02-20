@@ -62,9 +62,9 @@ do
         issn=${pid:1:9}
         len=${#pid}
         if [[ $len -eq 23 ]]; then
-            $cisis_dir/mx $processing_path/databases/isis/artigo  btell="0" pid=$pid   iso=$processing_path/output/isos/$pid/$pid"_artigo.iso" -all now
-            $cisis_dir/mx $processing_path/databases/isis/title   btell="0" $issn      iso=$processing_path/output/isos/$pid/$pid"_title.iso" -all now
-            $cisis_dir/mx $processing_path/databases/isis/bib4cit btell="0" $pid"$"    iso=$processing_path/output/isos/$pid/$pid"_bib4cit.iso" -all now
+            $cisis_dir/mx $processing_path/databases/isis/artigo  btell="0" pid=$pid count=1 iso=$processing_path/output/isos/$pid/$pid"_artigo.iso" -all now
+            $cisis_dir/mx $processing_path/databases/isis/title   btell="0" $issn count=1 iso=$processing_path/output/isos/$pid/$pid"_title.iso" -all now
+            $cisis_dir/mx $processing_path/databases/isis/bib4cit btell="0" $pid"$" count=1 iso=$processing_path/output/isos/$pid/$pid"_bib4cit.iso" -all now
             cd sh
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_artigo.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_artigo.json"
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_title.json"
