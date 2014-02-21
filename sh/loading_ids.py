@@ -51,7 +51,7 @@ def new_identifiers(legacy, articlemeta):
 def to_remove_identifiers(legacy, articlemeta):
     articlemeta.difference_update(legacy)
 
-    return legacy
+    return articlemeta
 
 
 def write_to_file(filename, data):

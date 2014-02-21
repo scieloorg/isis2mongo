@@ -53,10 +53,12 @@ total_pids=`wc -l $processing_path/sh/new_identifiers.txt`
 from=1
 for pid in `cat $processing_path/sh/new_identifiers.txt`;
 do
+    pid=${pid:3:23}
+    collection=${pid:0:3}
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
 
-    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists?code="$pid`
+    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists?code=$pid&collection=$collection"`
     if [[ $loaded == "false" ]]; then
         mkdir -p $processing_path/output/isos/$pid
         issn=${pid:1:9}
