@@ -10,7 +10,6 @@ ARTICLEMETAAPI = 'http://nefertiti.scielo.org:7000'
 
 
 def articlemeta_identifiers(offset_range=1000):
-    identifiers = []
     offset = 0
 
     with open('articlemeta_identifiers.txt', 'w') as f:
@@ -24,11 +23,9 @@ def articlemeta_identifiers(offset_range=1000):
                 return identifiers
 
             for identifier in request['objects']:
-                f.write('{0}\n'.format(
-                    identifier['collection'].strip(),
-                    identifier['code'].strip())
-                )
-                identifiers.append(identifier.strip())
+                line = identifier['collection'].strip()+identifier['code'].strip()
+                f.write('{0}\n'.format(line))
+
 
             offset += offset_range
 
