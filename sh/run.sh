@@ -53,8 +53,8 @@ total_pids=`wc -l $processing_path/sh/new_identifiers.txt`
 from=1
 for pid in `cat $processing_path/sh/new_identifiers.txt`;
 do
-    pid=${pid:3:23}
     collection=${pid:0:3}
+    pid=${pid:3:23}
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
 
