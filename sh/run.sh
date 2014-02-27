@@ -88,7 +88,10 @@ tot_to_remove=`cat $processing_path/sh/to_remove_identifiers.txt | wc -l`
 if (($tot_to_remove < 1000)); then
     for pid in `cat $processing_path/sh/to_remove_identifiers.txt`;
     do
-      curl -X DELETE "http://"$scielo_data_url"/api/v1/article/delete?code=$pid&admintoken=$admintoken"
+      collection=${pid:0:3}
+      pid=${pid:3:23}
+      durl="http://"$scielo_data_url"/api/v1/article/delete?code="$pid"&collection="$collection"&admintoken="$admintoken
+      curl -X DELETE $durl
     done
 else
   echo "To many files to remove. I will not remove then, please check it before"
