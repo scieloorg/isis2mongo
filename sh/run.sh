@@ -64,7 +64,7 @@ do
         issn=${pid:1:9}
         len=${#pid}
         if [[ $len -eq 23 ]]; then
-            $cisis_dir/mx $processing_path/databases/isis/artigo  btell="0" pid=$collection$pid count=1 iso=$processing_path/output/isos/$pid/$pid"_artigo.iso" -all now
+            $cisis_dir/mx $processing_path/databases/isis/artigo  btell="0" $collection$pid count=1 iso=$processing_path/output/isos/$pid/$pid"_artigo.iso" -all now
             $cisis_dir/mx $processing_path/databases/isis/title   btell="0" $collection$issn count=1 iso=$processing_path/output/isos/$pid/$pid"_title.iso" -all now
             $cisis_dir/mx $processing_path/databases/isis/bib4cit btell="0" $collection$pid"$" count=1 iso=$processing_path/output/isos/$pid/$pid"_bib4cit.iso" -all now
             cd sh

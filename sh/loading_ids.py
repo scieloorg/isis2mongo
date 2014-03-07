@@ -25,8 +25,7 @@ def articlemeta_identifiers(offset_range=1000):
 
             for identifier in request['objects']:
                 line = identifier['collection'].strip()+identifier['code'].strip()
-                f.write('{0}\n'.format(line)
-                )
+                f.write('{0}\n'.format(line))
                 identifiers.append(line)
 
             offset += offset_range
@@ -71,7 +70,7 @@ def main():
     write_to_file('new_identifiers.txt', difference_new)
 
     difference_to_remove = to_remove_identifiers(
-        set(articlemeta_ids), set(legacy_ids)
+        set(legacy_ids), set(articlemeta_ids)
     )
 
     write_to_file('to_remove_identifiers.txt', difference_to_remove)
