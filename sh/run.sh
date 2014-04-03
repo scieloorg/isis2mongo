@@ -73,7 +73,7 @@ do
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_bib4cit.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_bib4cit.json"
             ./packing_json.py 'article' $pid > $processing_path/output/isos/$pid/$pid"_package.json"
             cd ..
-            curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/article/add"
+            curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/article/add?admintoken="$admintoken
             rm -rf $processing_path/output/isos/$pid
         fi
     else
@@ -111,7 +111,7 @@ for issn in $itens; do
    ./isis2json.py $processing_path/output/isos/$issn/$issn"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$issn/$issn"_title.json"
    ./packing_json.py 'journal' $issn > $processing_path/output/isos/$issn/$issn"_package.json"
    cd ..
-   curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$issn/$issn"_package.json" -X POST "http://"$scielo_data_url"/api/v1/journal/add"
+   curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$issn/$issn"_package.json" -X POST "http://"$scielo_data_url"/api/v1/journal/add?admintoken="$admintoken
    rm -rf $processing_path/output/isos/$issn
 done
 
