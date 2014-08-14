@@ -136,14 +136,16 @@ done
 
 echo "Updating title database"
 
-$cisis_dir/mx $processing_path/databases/isis/title "pft=v400,/" -all now > issns.txt
+$cisis_dir/mx $processing_path/databases/isis/title "pft=v992,v400,/" -all now > issns.txt
 
 itens=`cat issns.txt`
 
 for issn in $itens; do
-   echo "Updating: "$issn 
+   echo "Updating: "$issn
+   collection=${issn:0:3}
+   issn=${issn:3:9}
    mkdir -p $processing_path/output/isos/$issn
-   $cisis_dir/mx $processing_path/databases/isis/title btell="0" $issn iso=$processing_path/output/isos/$issn/$issn"_title.iso" -all now
+   $cisis_dir/mx $processing_path/databases/isis/title btell="0" $collection$issn iso=$processing_path/output/isos/$issn/$issn"_title.iso" -all now
    cd sh
    ./isis2json.py $processing_path/output/isos/$issn/$issn"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$issn/$issn"_title.json"
    ./packing_json.py 'journal' $issn > $processing_path/output/isos/$issn/$issn"_package.json"
@@ -153,7 +155,3 @@ for issn in $itens; do
 done
 
 rm issns.txt
-
-
-
-
