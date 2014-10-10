@@ -2,7 +2,7 @@
 cisis_dir="/usr/local/bireme/cisis/5.4.pre04/lindG4/"
 
 # Path to SciELO Articles API
-scielo_data_url="localhost:7000"
+scielo_data_url="articlemeta.scielo.org"
 admintoken=""
 
 # parameters used when mode = scp
