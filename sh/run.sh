@@ -58,7 +58,7 @@ do
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
 
-    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists?code=$pid&collection=$collection"`
+    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists/?code=$pid&collection=$collection"`
     if [[ $loaded == "false" ]]; then
         mkdir -p $processing_path/output/isos/$pid
         issn=${pid:1:9}
@@ -73,7 +73,7 @@ do
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_bib4cit.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_bib4cit.json"
             ./packing_json.py 'article' $pid > $processing_path/output/isos/$pid/$pid"_package.json"
             cd ..
-            curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/article/add?admintoken="$admintoken
+            curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/article/add/?admintoken="$admintoken
             rm -rf $processing_path/output/isos/$pid
         fi
     else
@@ -90,7 +90,7 @@ if (($tot_to_remove < 1000)); then
     do
       collection=${pid:0:3}
       pid=${pid:3:23}
-      durl="http://"$scielo_data_url"/api/v1/article/delete?code="$pid"&collection="$collection"&admintoken="$admintoken
+      durl="http://"$scielo_data_url"/api/v1/article/delete/?code="$pid"&collection="$collection"&admintoken="$admintoken
       curl -X DELETE $durl
     done
 else
@@ -109,7 +109,7 @@ do
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
 
-    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists?code=$pid&collection=$collection"`
+    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists/?code=$pid&collection=$collection"`
     if [[ $loaded == "true" ]]; then
         mkdir -p $processing_path/output/isos/$pid
         issn=${pid:1:9}
@@ -124,7 +124,7 @@ do
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_bib4cit.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_bib4cit.json"
             ./packing_json.py 'article' $pid > $processing_path/output/isos/$pid/$pid"_package.json"
             cd ..
-            curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/article/update?admintoken="$admintoken
+            curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/article/update/?admintoken="$admintoken
             rm -rf $processing_path/output/isos/$pid
         fi
     else
@@ -150,7 +150,7 @@ for issn in $itens; do
    ./isis2json.py $processing_path/output/isos/$issn/$issn"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$issn/$issn"_title.json"
    ./packing_json.py 'journal' $issn > $processing_path/output/isos/$issn/$issn"_package.json"
    cd ..
-   curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$issn/$issn"_package.json" -X POST "http://"$scielo_data_url"/api/v1/journal/add?admintoken="$admintoken
+   curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$issn/$issn"_package.json" -X POST "http://"$scielo_data_url"/api/v1/journal/add/?admintoken="$admintoken
    rm -rf $processing_path/output/isos/$issn
 done
 
