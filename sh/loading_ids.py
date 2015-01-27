@@ -6,7 +6,7 @@ import os
 import json
 import urllib2
 
-ARTICLEMETAAPI = 'http://nefertiti.scielo.org:7000'
+ARTICLEMETAAPI = 'http://articlemeta.scielo.org'
 
 
 def articlemeta_identifiers(offset_range=1000):
