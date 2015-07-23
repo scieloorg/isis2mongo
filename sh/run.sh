@@ -81,77 +81,12 @@ do
     fi
 done
 
-echo "Removing exceded files from Article Meta"
+# RUNNING DELETION
 
-tot_to_remove=`cat $processing_path/sh/to_remove_identifiers.txt | wc -l`
+./delete.sh
 
-if (($tot_to_remove < 1000)); then
-    for pid in `cat $processing_path/sh/to_remove_identifiers.txt`;
-    do
-      collection=${pid:0:3}
-      pid=${pid:3:23}
-      durl="http://"$scielo_data_url"/api/v1/article/delete/?code="$pid"&collection="$collection"&admintoken="$admintoken
-      curl -X DELETE $durl
-    done
-else
-  echo "To many files to remove. I will not remove then, please check it before"
-fi
+# RUNNING UPDATE ATICLES
+./update_articles.sh
 
-echo "Updating Articles"
-
-mkdir -p $processing_path/output/isos/
-total_pids=`wc -l $processing_path/sh/update_identifiers.txt`
-from=1
-for pid in `cat $processing_path/sh/update_identifiers.txt`;
-do
-    collection=${pid:0:3}
-    pid=${pid:3:23}
-    echo $from"/"$total_pids "-" $pid
-    from=$(($from+1))
-
-    loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/article/exists/?code=$pid&collection=$collection"`
-    if [[ $loaded == "true" ]]; then
-        mkdir -p $processing_path/output/isos/$pid
-        issn=${pid:1:9}
-        len=${#pid}
-        if [[ $len -eq 23 ]]; then
-            $cisis_dir/mx $processing_path/databases/isis/artigo  btell="0" $collection$pid count=1 iso=$processing_path/output/isos/$pid/$pid"_artigo.iso" -all now
-            $cisis_dir/mx $processing_path/databases/isis/title   btell="0" $collection$issn count=1 iso=$processing_path/output/isos/$pid/$pid"_title.iso" -all now
-            $cisis_dir/mx $processing_path/databases/isis/bib4cit btell="0" $collection$pid"$" iso=$processing_path/output/isos/$pid/$pid"_bib4cit.iso" -all now
-            cd sh
-            ./isis2json.py $processing_path/output/isos/$pid/$pid"_artigo.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_artigo.json"
-            ./isis2json.py $processing_path/output/isos/$pid/$pid"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_title.json"
-            ./isis2json.py $processing_path/output/isos/$pid/$pid"_bib4cit.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_bib4cit.json"
-            ./packing_json.py 'article' $pid > $processing_path/output/isos/$pid/$pid"_package.json"
-            cd ..
-            curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/article/update/?admintoken="$admintoken
-            rm -rf $processing_path/output/isos/$pid
-        fi
-    else
-        echo "article alread processed!!!"
-    fi
-done
-
-> $processing_path/sh/update_identifiers.txt
-
-echo "Updating title database"
-
-$cisis_dir/mx $processing_path/databases/isis/title "pft=v992,v400,/" -all now > issns.txt
-
-itens=`cat issns.txt`
-
-for issn in $itens; do
-   echo "Updating: "$issn
-   collection=${issn:0:3}
-   issn=${issn:3:9}
-   mkdir -p $processing_path/output/isos/$issn
-   $cisis_dir/mx $processing_path/databases/isis/title btell="0" $collection$issn iso=$processing_path/output/isos/$issn/$issn"_title.iso" -all now
-   cd sh
-   ./isis2json.py $processing_path/output/isos/$issn/$issn"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$issn/$issn"_title.json"
-   ./packing_json.py 'journal' $issn > $processing_path/output/isos/$issn/$issn"_package.json"
-   cd ..
-   curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$issn/$issn"_package.json" -X POST "http://"$scielo_data_url"/api/v1/journal/add/?admintoken="$admintoken
-   rm -rf $processing_path/output/isos/$issn
-done
-
-rm issns.txt
+# RUNNING UPDATE TITLES
+./update_titles.sh
