@@ -29,7 +29,7 @@ do
 done
 
 echo "Creating Section CSV"
-$cisis_dir/mx $processing_path/databases/isis/issue "pft=if p(v49) then ('\"',v992[1],'\",\"',v49^l,'\",\"',v49^c,'\",\"',v49^t,'\"'/) fi" -all now > $processing_path/output/section_codes.csv
+$cisis_dir/mx $processing_path/databases/isis/issue "pft=if p(v49) then (v992[1],'|',v35[1],v65[1]*0.4,s(f(val(s(v36[1]*4.3))+10000,2,0))*1.4,'|',v49^l,'|',v49^c,'|',v49^t,/) fi" -all now > $processing_path/output/section_codes.csv
 
 echo "Indexing databases according to FSTs"
 $cisis_dir/mx $processing_path/databases/isis/artigo  fst="@$processing_path/fst/artigo.fst"  fullinv/ansi=$processing_path/databases/isis/artigo  tell=1000  -all now
