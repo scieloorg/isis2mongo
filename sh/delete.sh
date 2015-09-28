@@ -16,7 +16,7 @@ echo "Removing exceded files from Article Meta"
 
 tot_to_remove=`cat $processing_path/sh/to_remove_identifiers.txt | wc -l`
 
-if (($tot_to_remove < 1000)); then
+if (($tot_to_remove < 2000)); then
     for pid in `cat $processing_path/sh/to_remove_identifiers.txt`;
     do
       collection=${pid:0:3}

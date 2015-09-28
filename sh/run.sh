@@ -77,11 +77,10 @@ do
 done
 
 # RUNNING DELETION
-
-./delete.sh
+./delete.sh > ../log/delete.log
 
 # RUNNING UPDATE ATICLES
-./update_articles.sh
+./update_articles.sh > ../log/update_articles.log
 
 # RUNNING UPDATE TITLES
-./update_titles.sh
+./update_titles.sh > ../log/update_titles.log
