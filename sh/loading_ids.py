@@ -24,18 +24,28 @@ def articlemeta_identifiers(offset_range=1000):
                 return identifiers
 
             for identifier in request['objects']:
-                line = identifier['collection'].strip()+identifier['code'].strip()
+                line = identifier['collection'].strip()+identifier['code'].strip()+identifier['processing_date'].replace('-','').strip()
                 f.write('{0}\n'.format(line))
                 identifiers.append(line)
 
             offset += offset_range
 
 
-def legacy_identifiers():
+def articlemeta_identifiers_from_file(with_processing_date=False):
+    identifiers = []
+    with open('articlemeta_identifiers.txt', 'r') as f:
+        for identifier in f:
+            id = identifier.strip() if with_processing_date else identifier.strip()[0:26]
+            identifiers.append(id)
+
+    return identifiers
+
+def legacy_identifiers(with_processing_date=False):
     identifiers = []
     with open('legacy_identifiers.txt', 'r') as f:
         for identifier in f:
-            identifiers.append(identifier.strip())
+            id = identifier.strip() if with_processing_date else identifier.strip()[0:26]
+            identifiers.append(id)
 
     return identifiers
 
@@ -60,14 +70,18 @@ def write_to_file(filename, data):
 
 
 def main():
-    legacy_ids = legacy_identifiers()
-    articlemeta_ids = articlemeta_identifiers()
+    articlemeta_identifiers()
+    legacy_ids = legacy_identifiers(with_processing_date=True)
+    articlemeta_ids = articlemeta_identifiers_from_file(with_processing_date=True)
 
     difference_new = new_identifiers(
         set(legacy_ids), set(articlemeta_ids)
     )
 
     write_to_file('new_identifiers.txt', difference_new)
+
+    legacy_ids = legacy_identifiers(with_processing_date=False)
+    articlemeta_ids = articlemeta_identifiers_from_file(with_processing_date=False)
 
     difference_to_remove = to_remove_identifiers(
         set(legacy_ids), set(articlemeta_ids)
