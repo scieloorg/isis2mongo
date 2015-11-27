@@ -43,7 +43,7 @@ echo "listing articlemeta identifiers"
 cd sh
 ./loading_ids.py
 cd ..
-exit
+
 echo "Creating json files for each new article"
 mkdir -p $processing_path/output/isos/
 total_pids=`wc -l $processing_path/sh/new_identifiers.txt`
