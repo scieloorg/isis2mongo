@@ -75,7 +75,7 @@ do
         fi
     else
         echo "article alread processed!!!"
-        $collection$pid >> $processing_path/sh/update_identifiers.txt
+        echo $collection$pid >> $processing_path/sh/update_identifiers.txt
     fi
 done
 
