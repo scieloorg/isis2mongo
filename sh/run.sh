@@ -79,11 +79,11 @@ do
     fi
 done
 
-# RUNNING DELETION
-./delete.sh > ../log/delete.log
+echo "RUNNING DELETION"
+$processing_path/sh/delete.sh > $processing_path/log/delete.log
 
-# RUNNING UPDATE ATICLES
-./update_articles.sh > ../log/update_articles.log
+echo "RUNNING UPDATE ATICLES"
+$processing_path/sh/update_articles.sh > $processing_path/log/update_articles.log
 
-# RUNNING UPDATE TITLES
-./update_titles.sh > ../log/update_titles.log
+echo "RUNNING UPDATE TITLES"
+$processing_path/sh/update_titles.sh > $processing_path/log/update_titles.log
