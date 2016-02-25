@@ -42,4 +42,4 @@ do
     fi
 done
 
-echo '' > $processing_path/sh/update_identifiers.txt
+echo '' > $processing_path/sh/update_article_identifiers.txt
