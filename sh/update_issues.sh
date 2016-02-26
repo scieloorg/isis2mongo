@@ -20,15 +20,17 @@ from=1
 for pid in `cat $processing_path/sh/update_issue_identifiers.txt`;
 do
     collection=${pid:0:3}
-    pid=${pid:3:18}
+    pid=${pid:3:17}
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
     mkdir -p $processing_path/output/isos/$pid
     issn=${pid:0:8}
     len=${#pid}
-    if [[ $len -eq 18 ]]; then
+    if [[ $len -eq 17 ]]; then
+        $cisis_dir/mx $processing_path/databases/isis/title   btell="0" $collection$issn count=1 iso=$processing_path/output/isos/$pid/$pid"_title.iso" -all now
         $cisis_dir/mx $processing_path/databases/isis/issue  btell="0" $collection$pid count=1 iso=$processing_path/output/isos/$pid/$pid"_issue.iso" -all now
         cd sh
+        ./isis2json.py $processing_path/output/isos/$pid/$pid"_title.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_title.json"
         ./isis2json.py $processing_path/output/isos/$pid/$pid"_issue.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_issue.json"
         ./packing_json.py 'issue' $pid > $processing_path/output/isos/$pid/$pid"_package.json"
         cd ..

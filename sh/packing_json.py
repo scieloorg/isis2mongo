@@ -8,22 +8,32 @@ import json
 
 def packing_journal_json(pid):
     try:
-        citations_raw_json = json.loads(open(
+        journal_raw_json = json.loads(open(
             '../output/isos/{0}/{1}_issue.json'.format(pid, pid)).read())
 
-        return json.dumps(citations_raw_json['docs'][0])
+        return json.dumps(journal_raw_json['docs'][0])
     except:
         return None
 
 
 def packing_issue_json(pid):
-    try:
-        citations_raw_json = json.loads(open(
-            '../output/isos/{0}/{1}_title.json'.format(pid, pid)).read())
 
-        return json.dumps(citations_raw_json['docs'][0])
+    try:
+        title_raw_json = json.loads(open(
+            '../output/isos/{0}/{1}_title.json'.format(pid, pid)).read())
+        packed_json['title'] = title_raw_json['docs'][0]
     except:
-        return None
+        packed_json['title'] = None
+
+    try:
+        issue_raw_json = json.loads(open(
+            '../output/isos/{0}/{1}_issue.json'.format(pid, pid)).read())
+
+        packed_json['issue'] = json.dumps(issue_raw_json['docs'][0])
+    except:
+        packed_json['issue'] = None
+
+    return json.dumps(packed_json)
 
 
 def packing_article_json(pid):
