@@ -38,7 +38,7 @@ do
             ./packing_json.py 'issue' $pid > $processing_path/output/isos/$pid/$pid"_package.json"
             cd ..
             curl -H "Content-Type: application/json" --data @$processing_path/output/isos/$pid/$pid"_package.json" -X POST "http://"$scielo_data_url"/api/v1/issue/add/?admintoken="$admintoken
-            rm -rf $processing_path/output/isos/$pid
+            #rm -rf $processing_path/output/isos/$pid
         fi
     else
         echo "issue alread processed!!!"

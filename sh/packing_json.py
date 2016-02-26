@@ -17,7 +17,8 @@ def packing_journal_json(pid):
 
 
 def packing_issue_json(pid):
-
+    packed_json = {}
+    
     try:
         title_raw_json = json.loads(open(
             '../output/isos/{0}/{1}_title.json'.format(pid, pid)).read())
@@ -68,4 +69,4 @@ if __name__ == '__main__':
     if sys.argv[1] == 'journal':
         print packing_journal_json(sys.argv[2])
     if sys.argv[1] == 'issue':
-        print packing_journal_json(sys.argv[2])
+        print packing_issue_json(sys.argv[2])
