@@ -24,7 +24,7 @@ do
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
     mkdir -p $processing_path/output/isos/$pid
-    issn=${pid:0:8}
+    issn=${pid:0:9}
     len=${#pid}
     if [[ $len -eq 17 ]]; then
         $cisis_dir/mx $processing_path/databases/isis/title   btell="0" $collection$issn count=1 iso=$processing_path/output/isos/$pid/$pid"_title.iso" -all now
