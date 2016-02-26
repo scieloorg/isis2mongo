@@ -30,7 +30,7 @@ def packing_issue_json(pid):
         issue_raw_json = json.loads(open(
             '../output/isos/{0}/{1}_issue.json'.format(pid, pid)).read())
 
-        packed_json['issue'] = json.dumps(issue_raw_json['docs'][0])
+        packed_json['issue'] = issue_raw_json['docs'][0]
     except:
         packed_json['issue'] = None
 
