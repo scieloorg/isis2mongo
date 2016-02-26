@@ -21,16 +21,15 @@ from=1
 for pid in `cat $processing_path/sh/new_issue_identifiers.txt`;
 do
     collection=${pid:0:3}
-    pid=${pid:3:18}
+    pid=${pid:3:17}
     echo $from"/"$total_pids "-" $pid
     from=$(($from+1))
-
     loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/issue/exists/?code=$pid&collection=$collection"`
     if [[ $loaded == "false" ]]; then
         mkdir -p $processing_path/output/isos/$pid
         issn=${pid:0:9}
         len=${#pid}
-        if [[ $len -eq 18 ]]; then
+        if [[ $len -eq 17 ]]; then
             $cisis_dir/mx $processing_path/databases/isis/issue  btell="0" $collection$pid count=1 iso=$processing_path/output/isos/$pid/$pid"_issue.iso" -all now
             cd sh
             ./isis2json.py $processing_path/output/isos/$pid/$pid"_issue.iso" -c -p v -t 3 > $processing_path/output/isos/$pid/$pid"_issue.json"
