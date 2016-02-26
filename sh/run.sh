@@ -54,8 +54,11 @@ $processing_path/sh/add_articles.sh > $processing_path/log/add_articles.log
 echo "RUNNING ADD ISSUES"
 $processing_path/sh/add_issues.sh > $processing_path/log/add_issues.log
 
-echo "RUNNING DELETION"
-$processing_path/sh/delete.sh > $processing_path/log/delete.log
+echo "RUNNING DELETE ARTICLES"
+$processing_path/sh/delete_articles.sh > $processing_path/log/delete_articles.log
+
+echo "RUNNING DELETE ISSUES"
+$processing_path/sh/delete_issues.sh > $processing_path/log/delete_issues.log
 
 echo "RUNNING UPDATE ARTICLES"
 $processing_path/sh/update_articles.sh > $processing_path/log/update_articles.log
