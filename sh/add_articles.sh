@@ -12,6 +12,14 @@ mkdir -p $processing_path/iso
 mkdir -p $processing_path/tmp
 mkdir -p $processing_path/output
 
+echo "Listing legacy articles identifiers"
+$cisis_dir/mx $processing_path/databases/isis/artigo "pft=if p(v880) then,v992,v880,v91, fi,/" -all now > $processing_path/sh/legacy_article_identifiers.txt
+
+echo "listing articlemeta articles identifiers"
+cd sh
+./loading_article_ids.py
+cd ..
+
 echo "Adding Articles"
 
 echo "Creating json files for each new article"

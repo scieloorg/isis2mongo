@@ -34,20 +34,6 @@ $cisis_dir/mx $processing_path/databases/isis/title   fst="@$processing_path/fst
 $cisis_dir/mx $processing_path/databases/isis/issue   fst="@$processing_path/fst/issue.fst"   fullinv/ansi=$processing_path/databases/isis/issue   tell=100   -all now
 $cisis_dir/mx $processing_path/databases/isis/bib4cit fst="@$processing_path/fst/bib4cit.fst" fullinv/ansi=$processing_path/databases/isis/bib4cit tell=10000 -all now
 
-echo "Listing legacy identifiers"
-$cisis_dir/mx $processing_path/databases/isis/artigo "pft=if p(v880) then,v992,v880,v91, fi,/" -all now > $processing_path/sh/legacy_article_identifiers.txt
-$cisis_dir/mx $processing_path/databases/isis/issue "pft=if p(v880) then,v992,v880,v91, fi,/" -all now > $processing_path/sh/legacy_issue_identifiers.txt
-
-echo "listing articlemeta articles identifiers"
-cd sh
-./loading_article_ids.py
-cd ..
-
-echo "listing articlemeta issues identifiers"
-cd sh
-./loading_issue_ids.py
-cd ..
-
 echo "RUNNING ADD ARTICLES"
 $processing_path/sh/add_articles.sh > $processing_path/log/add_articles.log
 
