@@ -15,9 +15,9 @@ mkdir -p $processing_path/output
 echo "Updating Articles"
 
 mkdir -p $processing_path/output/isos/
-total_pids=`wc -l $processing_path/sh/update_identifiers.txt`
+total_pids=`wc -l $processing_path/sh/update_article_identifiers.txt`
 from=1
-for pid in `cat $processing_path/sh/update_identifiers.txt`;
+for pid in `cat $processing_path/sh/update_article_identifiers.txt`;
 do
     collection=${pid:0:3}
     pid=${pid:3:23}
