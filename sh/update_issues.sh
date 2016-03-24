@@ -21,7 +21,7 @@ for pid in `cat $processing_path/sh/update_issue_identifiers.txt`;
 do
     collection=${pid:0:3}
     pid=${pid:3:17}
-    echo $from"/"$total_pids "-" $pid
+    echo $from"/"$total_pids "-" $collection$pid
     from=$(($from+1))
     mkdir -p $processing_path/output/isos/$pid
     issn=${pid:0:9}

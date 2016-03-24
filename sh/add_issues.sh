@@ -30,7 +30,7 @@ for pid in `cat $processing_path/sh/new_issue_identifiers.txt`;
 do
     collection=${pid:0:3}
     pid=${pid:3:17}
-    echo $from"/"$total_pids "-" $pid
+    echo $from"/"$total_pids "-" $collection$pid
     from=$(($from+1))
     loaded=`curl -s -X GET "http://"$scielo_data_url"/api/v1/issue/exists/?code=$pid&collection=$collection"`
     if [[ $loaded == "false" ]]; then
