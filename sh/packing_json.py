@@ -9,7 +9,7 @@ import json
 def packing_journal_json(pid):
     try:
         journal_raw_json = json.loads(open(
-            '../output/isos/{0}/{1}_issue.json'.format(pid, pid)).read())
+            '../output/isos/{0}/{1}_title.json'.format(pid, pid)).read())
 
         return json.dumps(journal_raw_json['docs'][0])
     except:
