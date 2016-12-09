@@ -1,34 +1,29 @@
-#!/usr/bin/python2.7
-#encode: utf-8
+#!/usr/bin/python
+# coding: utf-8
 
 import sys
 import os
 import json
-import urllib2
+from articlemeta.client import ThriftClient
+import logging
 
-ARTICLEMETAAPI = 'http://articlemeta.scielo.org'
+logger = logging.getLogger(__name__)
 
 
 def articlemeta_identifiers(offset_range=1000):
     identifiers = []
     offset = 0
 
+    cl = ThriftClient(
+        domain=os.environ.get('ARTICLEMETA_THRIFTSERVER', None),
+        admintoken=os.environ.get('ARTICLEMETA_ADMINTOKEN', None)
+    )
+
     with open('articlemeta_article_identifiers.txt', 'w') as f:
-        while True:
-            url = '{0}/api/v1/article/identifiers?offset={1}'.format(
-                ARTICLEMETAAPI, str(offset)
-            )
-            print url
-            request = json.loads(urllib2.urlopen(url).read())
-            if len(request['objects']) == 0:
-                return identifiers
-
-            for identifier in request['objects']:
-                line = identifier['collection'].strip()+identifier['code'].strip()+identifier['processing_date'].replace('-','').strip()
-                f.write('{0}\n'.format(line))
-                identifiers.append(line)
-
-            offset += offset_range
+        for document in cl.documents(only_identifiers=True):
+            line = document.collection.strip()+document.code.strip()+document.processing_date.replace('-','').strip()
+            f.write('{0}\n'.format(line))
+            identifiers.append(line)
 
 
 def articlemeta_identifiers_from_file(with_processing_date=False):
@@ -39,6 +34,7 @@ def articlemeta_identifiers_from_file(with_processing_date=False):
             identifiers.append(id)
 
     return identifiers
+
 
 def legacy_identifiers(with_processing_date=False):
     identifiers = []

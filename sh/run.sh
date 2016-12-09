@@ -1,56 +1,57 @@
 # Path for the script root directory
-processing_path="/bases/isis2mongo"
+BASEDIR=$(dirname $0)
 
-cd $processing_path
-
-. $processing_path/sh/config.sh
+echo "Processing configuration"
+echo "ARTICLEMETA_DOMAIN: "$ARTICLEMETA_DOMAIN
+echo "ARTICLEMETA_THRIFTSERVER: "$ARTICLEMETA_THRIFTSERVER
+echo "HA"
 
 echo "Script running with CISIS version:"
-$cisis_dir/mx what
+$BASEDIR/../cisis/mx what
 
-mkdir -p $processing_path/databases
-mkdir -p $processing_path/iso
-mkdir -p $processing_path/tmp
-mkdir -p $processing_path/output
+mkdir -p $BASEDIR/../databases
+mkdir -p $BASEDIR/../isos
+mkdir -p $BASEDIR/../tmp
+mkdir -p $BASEDIR/../output
 
-colls=`ls -1 $processing_path/iso`
-rm -f $processing_path/databases/isis/artigo.*
-rm -f $processing_path/databases/isis/title.*
-rm -f $processing_path/databases/isis/bib4cit.*
-rm -f $processing_path/databases/isis/issue.*
+colls=`ls -1 $BASEDIR/../isos`
+rm -f $BASEDIR/../databases/artigo.*
+rm -f $BASEDIR/../databases/title.*
+rm -f $BASEDIR/../databases/bib4cit.*
+rm -f $BASEDIR/../databases/issue.*
 
 for coll in $colls;
 do
    echo "Creating now "$coll" master files"
-   $cisis_dir/mx iso=$processing_path/iso/$coll/artigo.iso "proc='a992#$coll#'" append=$processing_path/databases/isis/artigo -all now
-   $cisis_dir/mx iso=$processing_path/iso/$coll/title.iso "proc='a992#$coll#'" append=$processing_path/databases/isis/title -all now
-   $cisis_dir/mx iso=$processing_path/iso/$coll/bib4cit.iso "proc='a992#$coll#'" append=$processing_path/databases/isis/bib4cit -all now
-   $cisis_dir/mx iso=$processing_path/iso/$coll/issue.iso "proc='a992#$coll#a880#',v35,v65*0.4,s(f(val(s(v36*4.4))+10000,2,0))*1.4,'#'" append=$processing_path/databases/isis/issue -all now
+   $BASEDIR/../cisis/mx iso=$BASEDIR/../isos/$coll/artigo.iso "proc='a992#$coll#'" append=$BASEDIR/../databases/artigo -all now
+   $BASEDIR/../cisis/mx iso=$BASEDIR/../isos/$coll/title.iso "proc='a992#$coll#'" append=$BASEDIR/../databases/title -all now
+   $BASEDIR/../cisis/mx iso=$BASEDIR/../isos/$coll/bib4cit.iso "proc='a992#$coll#'" append=$BASEDIR/../databases/bib4cit -all now
+   $BASEDIR/../cisis/mx iso=$BASEDIR/../isos/$coll/issue.iso "proc='a992#$coll#a880#',v35,v65*0.4,s(f(val(s(v36*4.4))+10000,2,0))*1.4,'#'" append=$BASEDIR/../databases/issue -all now
 done
 
 echo "Indexing databases according to FSTs"
-$cisis_dir/mx $processing_path/databases/isis/artigo  fst="@$processing_path/fst/artigo.fst"  fullinv/ansi=$processing_path/databases/isis/artigo  tell=1000  -all now
-$cisis_dir/mx $processing_path/databases/isis/title   fst="@$processing_path/fst/title.fst"   fullinv/ansi=$processing_path/databases/isis/title   tell=10    -all now
-$cisis_dir/mx $processing_path/databases/isis/issue   fst="@$processing_path/fst/issue.fst"   fullinv/ansi=$processing_path/databases/isis/issue   tell=100   -all now
-$cisis_dir/mx $processing_path/databases/isis/bib4cit fst="@$processing_path/fst/bib4cit.fst" fullinv/ansi=$processing_path/databases/isis/bib4cit tell=10000 -all now
-
-echo "RUNNING ADD ARTICLES"
-$processing_path/sh/add_articles.sh > $processing_path/log/add_articles.log
-
-echo "RUNNING ADD ISSUES"
-$processing_path/sh/add_issues.sh > $processing_path/log/add_issues.log
-
-echo "RUNNING DELETE ARTICLES"
-$processing_path/sh/delete_articles.sh > $processing_path/log/delete_articles.log
-
-echo "RUNNING DELETE ISSUES"
-$processing_path/sh/delete_issues.sh > $processing_path/log/delete_issues.log
-
-echo "RUNNING UPDATE ARTICLES"
-$processing_path/sh/update_articles.sh > $processing_path/log/update_articles.log
-
-echo "RUNNING UPDATE ISSUES"
-$processing_path/sh/update_issues.sh > $processing_path/log/update_issues.log
+$BASEDIR/../cisis/mx $BASEDIR/../databases/artigo  fst="@$BASEDIR/../fst/artigo.fst"  fullinv/ansi=$BASEDIR/../databases/artigo  tell=1000  -all now
+$BASEDIR/../cisis/mx $BASEDIR/../databases/title   fst="@$BASEDIR/../fst/title.fst"   fullinv/ansi=$BASEDIR/../databases/title   tell=10    -all now
+$BASEDIR/../cisis/mx $BASEDIR/../databases/issue   fst="@$BASEDIR/../fst/issue.fst"   fullinv/ansi=$BASEDIR/../databases/issue   tell=100   -all now
+$BASEDIR/../cisis/mx $BASEDIR/../databases/bib4cit fst="@$BASEDIR/../fst/bib4cit.fst" fullinv/ansi=$BASEDIR/../databases/bib4cit tell=10000 -all now
 
 echo "RUNNING UPDATE TITLES"
-$processing_path/sh/update_titles.sh > $processing_path/log/update_titles.log
+$BASEDIR/update_titles.sh
+
+echo "RUNNING ADD ISSUES"
+$BASEDIR/add_issues.sh
+
+echo "RUNNING UPDATE ISSUES"
+$BASEDIR/update_issues.sh
+
+echo "RUNNING DELETE ISSUES"
+$BASEDIR/delete_issues.sh
+
+echo "RUNNING ADD ARTICLES"
+$BASEDIR/add_articles.sh
+
+echo "RUNNING UPDATE ARTICLES"
+$BASEDIR/update_articles.sh
+
+echo "RUNNING DELETE ARTICLES"
+$BASEDIR/delete_articles.sh
