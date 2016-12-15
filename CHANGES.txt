@@ -1,0 +1,4 @@
+2016-12-12
+==========
+
+#. Mudando de script shell para python

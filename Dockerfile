@@ -12,9 +12,10 @@ COPY . /app
 
 RUN pip install --upgrade pip
 RUN pip install -r /app/requirements.txt
-
 RUN chmod -R 755 /app/*
 
-WORKDIR /app/sh
+WORKDIR /app
 
-entrypoint ./run.sh
+RUN python setup.py install
+
+CMD ["isis2mongo_run"]
