@@ -153,26 +153,32 @@ def run(collections):
         to_remove_journals = list(articlemeta_journals - legacy_journals)
 
         logger.info('Documents to be included in articlemeta (%d)' % len(new_documents))
-        logger.info('Documents to be removed from articlemeta (%d)' % len(to_remove_documents))
-        try:
-            [rc.delete_document(pid.split('_')[1], pid.split('_')[0]) for pid in to_remove_documents]
-        except UnauthorizedAccess:
-            logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
 
+        logger.info('Documents to be removed from articlemeta (%d)' % len(to_remove_documents))
+        for item in to_remove_documents:
+            item = item.split('_')
+            try:
+                rc.delete_document(item[1], item[0])
+            except UnauthorizedAccess:
+                logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
 
         logger.info('Journals to be included in articlemeta (%d)' % len(new_journals))
         logger.info('Journals to be removed from articlemeta (%d)' % len(to_remove_journals))
-        try:
-            [rc.delete_journal(pid.split('_')[1], pid.split('_')[0]) for pid in to_remove_journals]
-        except UnauthorizedAccess:
-            logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+        for item in to_remove_journals:
+            item = item.split('_')
+            try:
+                rc.delete_journal(item[1], item[0])
+            except UnauthorizedAccess:
+                logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
 
         logger.info('Issues to be included in articlemeta (%d)' % len(new_issues))
         logger.info('Issues to be removed from articlemeta (%d)' % len(to_remove_issues))
-        try:
-            [rc.delete_issue(pid.split('_')[1], pid.split('_')[0]) for pid in to_remove_issues]
-        except UnauthorizedAccess:
-            logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+        for item in to_remove_issues:
+            item = item.split('_')
+            try:
+                rc.delete_issue(item[1], item[0])
+            except UnauthorizedAccess:
+                logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
 
 
 
