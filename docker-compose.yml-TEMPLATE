@@ -5,10 +5,9 @@ networks:
     external: false
 
 services:
+
   isis2mongo:
-    build:
-      context: .
-      dockerfile: Dockerfile-dev
+    image: scieloorg/isis2mongo
     hostname: isis2mongo
     networks:
       - isis2mongo
@@ -20,9 +19,7 @@ services:
       - ARTICLEMETA_DOMAIN=localhost
       - ARTICLEMETA_THRIFTSERVER=localhost:11620
       - ARTICLEMETA_ADMINTOKEN=admin
-    stdin_open: True
-    tty: True
-    command: isis2mongo_run 
+    command: isis2mongo_run --help
 
   mongo:
     image: mongo

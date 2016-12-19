@@ -22,7 +22,7 @@ services:
       - ARTICLEMETA_ADMINTOKEN=admin
     stdin_open: True
     tty: True
-    command: isis2mongo_run 
+    command: isis2mongo_run --help
 
   mongo:
     image: mongo
