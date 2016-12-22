@@ -19,14 +19,14 @@ test_requires = []
 
 setup(
     name="isis2mongo",
-    version='0.1.0',
+    version='1.0.1',
     description="Processamento de alimentação do articlemeta",
     author="SciELO",
     author_email="scielo-dev@googlegroups.com",
     license="BSD 2-clause",
     url="http://docs.scielo.org",
     keywords='scielo statistics',
-    packages=['isis2mongo'],
+    packages=find_packages(),
     classifiers=[
         "Development Status :: 1 - Planning",
         "Intended Audience :: Developers",
@@ -45,6 +45,5 @@ setup(
     entry_points="""\
     [console_scripts]
     isis2mongo_run=isis2mongo.isis2mongo:main
-    mx=isis2mongo.isis:mx
     """,
 )
