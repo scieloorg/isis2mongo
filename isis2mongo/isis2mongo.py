@@ -13,8 +13,6 @@ from articlemeta.client import UnauthorizedAccess
 
 from controller import DataBroker, IsisDataBroker
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-
 logger = logging.getLogger(__name__)
 
 DATABASES = (
@@ -26,6 +24,7 @@ DATABASES = (
 
 ADMINTOKEN = os.environ.get('ARTICLEMETA_ADMINTOKEN', 'admin')
 ARTICLEMETA_THRIFTSERVER = os.environ.get('ARTICLEMETA_THRIFTSERVER', 'admin')
+ISO_PATH = os.environ.get('ISO_PATH', os.path.dirname(os.path.abspath(__file__)))
 
 
 def issue_pid(record):
@@ -83,7 +82,7 @@ def load_isis_records(collection, issns=None):
 
     for iso, coll in DATABASES:
         logger.info('Recording (%s) records for collection (%s)' % (coll, collection))
-        isofile = '%s/../isos/%s/%s.iso' % (BASE_DIR, collection, iso)
+        isofile = '%s/../isos/%s/%s.iso' % (ISO_PATH, collection, iso)
 
         try:
             isis_db = IsisDataBroker(isofile)
