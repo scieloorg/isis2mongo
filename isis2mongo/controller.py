@@ -8,7 +8,7 @@ from isis2json import isis2json
 logger = logging.getLogger(__name__)
 
 
-class Isis2Json(object):
+class IsisDataBroker(object):
 
     def __init__(self, database):
 

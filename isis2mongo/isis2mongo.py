@@ -11,7 +11,7 @@ import json
 from articlemeta.client import ThriftClient
 from articlemeta.client import UnauthorizedAccess
 
-from controller import DataBroker, Isis2Json
+from controller import DataBroker, IsisDataBroker
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -60,8 +60,8 @@ def load_isis_records(collection, issns=None):
         record['collection'] = collection
         record['code'] = pid
         record['v880'] = [{'_': pid}]  # rewriting pid in case the v880 do not exists in record.
-        record['processing_date'] = datetime.strptime(record.get('v91', [{'_': datetime.now().isoformat()[:10]}])[0]['_'].replace('-', ''), '%Y%m%d').isoformat()[:10]
-
+        processing_date = record.get('v91', [{'_': datetime.now().isoformat()[:10]}])[0]['_'].replace('-', '') or datetime.now().isoformat()[:10].replace('-', '')
+        record['processing_date'] = datetime.strptime(processing_date, '%Y%m%d').isoformat()[:10]
         if len(pid) == 9:
             record['journal'] = pid
 
@@ -84,13 +84,22 @@ def load_isis_records(collection, issns=None):
     for iso, coll in DATABASES:
         logger.info('Recording (%s) records for collection (%s)' % (coll, collection))
         isofile = '%s/../isos/%s/%s.iso' % (BASE_DIR, collection, iso)
+
         try:
-            isis2json = Isis2Json(isofile)
+            isis_db = IsisDataBroker(isofile)
         except IOError:
             raise ValueError('ISO file do not exists for the collection (%s), check the collection acronym or the path to the ISO file (%s)' % (collection, isofile))
 
-        for record in isis2json.read():
-            record = prepare_record(collection, record)
+        for ndx, record in enumerate(isis_db.read()):
+            ndx += 1
+            logger.debug('Reading record (%d) from iso (%s)' % (ndx, isofile))
+
+            try:
+                record = prepare_record(collection, record)
+            except:
+                logger.error('Fail to load document. Integrity error.')
+                continue
+
             if not record:
                 continue
 
@@ -167,10 +176,19 @@ def run(collection, issns):
 
         # Including and Updating Documents
         logger.info('Documents to be included in articlemeta (%d)' % len(new_documents))
-        for item in new_documents:
+        for ndx, item in enumerate(new_documents):
+            ndx += 1
             item = item.split('_')
-            document_meta = ctrl.load_document(item[0], item[1])
+            try:
+                document_meta = ctrl.load_document(item[0], item[1])
+            except:
+                logger.error('Fail to load document into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                continue
+            if not document_meta:
+                logger.error('Fail to load document into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                continue
             rc.add_document(json.dumps(document_meta))
+            logger.debug('Document (%d, %d) loaded into Articlemeta (%s)' % (ndx, len(new_documents), '_'.join([item[0], item[1]])))
 
         # Removing Documents
         if not len(to_remove_documents) > 2000:
@@ -186,10 +204,19 @@ def run(collection, issns):
 
         # Including and Updating Journals
         logger.info('Journals to be included in articlemeta (%d)' % len(new_journals))
-        for item in new_journals:
+        for ndx, item in enumerate(new_journals):
+            ndx += 1
             item = item.split('_')
-            journal_meta = ctrl.load_journal(item[0], item[1])
+            try:
+                journal_meta = ctrl.load_journal(item[0], item[1])
+            except:
+                logger.error('Fail to load journal into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                continue
+            if not journal_meta:
+                logger.error('Fail to load journal into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                continue
             rc.add_journal(json.dumps(journal_meta))
+            logger.debug('Journal (%d, %d) loaded into Articlemeta (%s)' % (ndx, len(new_journals), '_'.join([item[0], item[1]])))
 
         # Removing Journals
         if not len(to_remove_journals) > 10:
@@ -205,10 +232,19 @@ def run(collection, issns):
 
         # Including and Updating Issues
         logger.info('Issues to be included in articlemeta (%d)' % len(new_issues))
-        for item in new_issues:
+        for ndx, item in enumerate(new_issues):
+            ndx += 1
             item = item.split('_')
-            issue_meta = ctrl.load_issue(item[0], item[1])
+            try:
+                issue_meta = ctrl.load_issue(item[0], item[1])
+            except:
+                logger.error('Fail to load issue into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                continue
+            if not issue_meta:
+                logger.error('Fail to load issue into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                continue
             rc.add_issue(json.dumps(issue_meta))
+            logger.debug('Issue (%d, %d) loaded into Articlemeta (%s)' % (ndx, len(new_issues), '_'.join([item[0], item[1]])))
 
         # Removing Issues
         if not len(to_remove_issues) > 200:
@@ -262,6 +298,8 @@ def main():
 
     args = parser.parse_args()
     logger.setLevel(args.logging_level)
-    logging.basicConfig()
+    logging.basicConfig(
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
 
     run(args.collection, args.issns)
