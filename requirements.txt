@@ -1,2 +1,2 @@
-articlemetaapi==1.6.13
+articlemetaapi==1.6.14
 pymongo

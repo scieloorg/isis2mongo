@@ -13,7 +13,7 @@ class IsisDataBroker(object):
     def __init__(self, database):
 
         if not os.path.exists(database):
-            raise IOError('File do not exists (%s)' % database)
+            raise IOError('File do not exists (%s)', database)
 
         self.database = database
 
@@ -110,7 +110,8 @@ class DataBroker(object):
 
     def load_journal(self, collection, pid):
 
-        metadata = self.mongodb['journals'].find_one({'code': pid, 'collection': collection})
+        metadata = self.mongodb['journals'].find_one(
+            {'code': pid, 'collection': collection})
         del(metadata['_id'])
         del(metadata['journal'])
 
@@ -120,8 +121,10 @@ class DataBroker(object):
 
         metadata = {}
 
-        issue_metadata = self.mongodb['issues'].find_one({'code': pid, 'collection': collection})
-        journal_metadata = self.mongodb['journals'].find_one({'code': pid[:9], 'collection': collection})
+        issue_metadata = self.mongodb['issues'].find_one(
+            {'code': pid, 'collection': collection})
+        journal_metadata = self.mongodb['journals'].find_one(
+            {'code': pid[:9], 'collection': collection})
         del(journal_metadata['_id'])
         del(journal_metadata['journal'])
         del(issue_metadata['_id'])
@@ -137,8 +140,10 @@ class DataBroker(object):
 
         metadata = {}
 
-        document_metadata = self.mongodb['articles'].find_one({'code': pid, 'collection': collection})
-        journal_metadata = self.mongodb['journals'].find_one({'code': pid[1:10], 'collection': collection})
+        document_metadata = self.mongodb['articles'].find_one(
+            {'code': pid, 'collection': collection})
+        journal_metadata = self.mongodb['journals'].find_one(
+            {'code': pid[1:10], 'collection': collection})
         del(document_metadata['_id'])
         del(document_metadata['journal'])
         del(document_metadata['issue'])
@@ -150,7 +155,8 @@ class DataBroker(object):
         metadata['article'] = document_metadata
         metadata['citations'] = []
 
-        for citation in self.mongodb['references'].find({'document': pid, 'collection': collection}):
+        for citation in self.mongodb['references'].find(
+                {'document': pid, 'collection': collection}):
             del(citation['_id'])
             del(citation['document'])
             del(citation['journal'])
@@ -176,8 +182,8 @@ class DataBroker(object):
             self.journals_ids.append('_'.join([record['collection'], record['code']]))
 
         try:
-            logger.debug('Recording (%s)' % record['collection']+record['code'])
+            logger.debug('Recording (%s)', record['collection']+record['code'])
             self.mongodb[database_collection].update(fltr, record, upsert=True)
-            logger.debug('Recorded (%s)' % record['collection']+record['code'])
+            logger.debug('Recorded (%s)', record['collection']+record['code'])
         except:
-            logger.exception('Fail to write record (%s)' % record['collection']+record['code'])
+            logger.exception('Fail to write record (%s)', record['collection']+record['code'])

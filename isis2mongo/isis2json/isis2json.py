@@ -41,6 +41,7 @@ ISIS_ACTIVE_KEY = 'active'
 SUBFIELD_DELIMITER = '^'
 INPUT_ENCODING = 'cp1252'
 
+
 def iterMstRecords(master_file_name, isis_json_type):
     try:
         from br.bireme.zeus.master import MasterFactory, Record
@@ -83,6 +84,7 @@ def iterMstRecords(master_file_name, isis_json_type):
                 raise NotImplementedError('ISIS-JSON type %s conversion not yet implemented for .mst input' % isis_json_type)
         yield fields
     mst.close()
+
 
 def iterIsoRecords(iso_file_name, isis_json_type):
     from iso2709 import IsoFile

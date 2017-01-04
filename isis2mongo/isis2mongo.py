@@ -25,6 +25,7 @@ DATABASES = (
 ADMINTOKEN = os.environ.get('ARTICLEMETA_ADMINTOKEN', 'admin')
 ARTICLEMETA_THRIFTSERVER = os.environ.get('ARTICLEMETA_THRIFTSERVER', 'admin')
 ISO_PATH = os.environ.get('ISO_PATH', os.path.dirname(os.path.abspath(__file__)))
+LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', None)
 
 
 def issue_pid(record):
@@ -81,7 +82,7 @@ def load_isis_records(collection, issns=None):
         return record
 
     for iso, coll in DATABASES:
-        logger.info('Recording (%s) records for collection (%s)' % (coll, collection))
+        logger.info('Recording (%s) records for collection (%s)', coll, collection)
         isofile = '%s/../isos/%s/%s.iso' % (ISO_PATH, collection, iso)
 
         try:
@@ -91,7 +92,7 @@ def load_isis_records(collection, issns=None):
 
         for ndx, record in enumerate(isis_db.read()):
             ndx += 1
-            logger.debug('Reading record (%d) from iso (%s)' % (ndx, isofile))
+            logger.debug('Reading record (%d) from iso (%s)', ndx, isofile)
 
             try:
                 record = prepare_record(collection, record)
@@ -115,6 +116,10 @@ def load_articlemeta_issues_ids(collection, issns=None):
     logger.info('Loading articlemeta issues ids')
     for issn in issns or [None]:
         for issue in rc.issues(collection, issn=issn, only_identifiers=True):
+            logger.debug(
+                'Loading articlemeta issue id (%s)',
+                '_'.join([issue.collection, issue.code, issue.processing_date.replace('-', '')])
+            )
             issues_pids.append('_'.join([issue.collection, issue.code, issue.processing_date.replace('-', '')]))
 
     return issues_pids
@@ -127,6 +132,10 @@ def load_articlemeta_documents_ids(collection, issns=None):
     logger.info('Loading articlemeta documents ids')
     for issn in issns or [None]:
         for document in rc.documents(collection, issn=issn, only_identifiers=True):
+            logger.debug(
+                'Loading articlemeta document id (%s)',
+                '_'.join([document.collection, document.code, document.processing_date.replace('-', '')])
+            )
             documents_pids.append('_'.join([document.collection, document.code, document.processing_date.replace('-', '')]))
 
     return documents_pids
@@ -139,6 +148,10 @@ def load_articlemeta_journals_ids(collection, issns=None):
     logger.info('Loading articlemeta journals ids')
     for issn in issns or [None]:
         for journal in rc.journals(collection, issn=issn, only_identifiers=True):
+            logger.debug(
+                'Loading articlemeta journal id (%s)',
+                '_'.join([journal.collection, journal.code])
+            )
             journals_pids.append('_'.join([journal.collection, journal.code]))
 
     return journals_pids
@@ -149,13 +162,16 @@ def run(collection, issns):
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
     logger.info('Running Isis2mongo')
-    logger.debug('Thrift Server: %s' % ARTICLEMETA_THRIFTSERVER)
-    logger.debug('Admin Token: %s' % ADMINTOKEN)
-    logger.info('Loading data for collection: %s' % collection)
+    logger.debug('Thrift Server: %s', ARTICLEMETA_THRIFTSERVER)
+    logger.debug('Admin Token: %s', ADMINTOKEN)
+    logger.info('Loading data for collection: %s', collection)
 
-    articlemeta_documents = set(load_articlemeta_documents_ids(collection, issns))
-    articlemeta_issues = set(load_articlemeta_issues_ids(collection, issns))
-    articlemeta_journals = set(load_articlemeta_journals_ids(collection, issns))
+    articlemeta_documents = set(
+        load_articlemeta_documents_ids(collection, issns))
+    articlemeta_issues = set(
+        load_articlemeta_issues_ids(collection, issns))
+    articlemeta_journals = set(
+        load_articlemeta_journals_ids(collection, issns))
 
     with DataBroker(uuid.uuid4()) as ctrl:
         for coll, record in load_isis_records(collection, issns):
@@ -174,24 +190,40 @@ def run(collection, issns):
         to_remove_journals = list(articlemeta_journals - legacy_journals)
 
         # Including and Updating Documents
-        logger.info('Documents to be included in articlemeta (%d)' % len(new_documents))
+        logger.info(
+            'Documents to be included in articlemeta (%d)',
+            len(new_documents)
+        )
         for ndx, item in enumerate(new_documents):
             ndx += 1
             item = item.split('_')
             try:
                 document_meta = ctrl.load_document(item[0], item[1])
             except:
-                logger.error('Fail to load document into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                logger.error(
+                    'Fail to load document into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
                 continue
             if not document_meta:
-                logger.error('Fail to load document into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                logger.error(
+                    'Fail to load document into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
                 continue
             rc.add_document(json.dumps(document_meta))
-            logger.debug('Document (%d, %d) loaded into Articlemeta (%s)' % (ndx, len(new_documents), '_'.join([item[0], item[1]])))
+            logger.debug(
+                'Document (%d, %d) loaded into Articlemeta (%s)',
+                ndx, len(new_documents),
+                '_'.join([item[0], item[1]])
+            )
 
         # Removing Documents
         if not len(to_remove_documents) > 2000:
-            logger.info('Documents to be removed from articlemeta (%d)' % len(to_remove_documents))
+            logger.info(
+                'Documents to be removed from articlemeta (%d)',
+                len(to_remove_documents)
+            )
             for item in to_remove_documents:
                 item = item.split('_')
                 try:
@@ -202,24 +234,41 @@ def run(collection, issns):
             logger.info('To many documents to be removed, the remove task will be skipped')
 
         # Including and Updating Journals
-        logger.info('Journals to be included in articlemeta (%d)' % len(new_journals))
+        logger.info(
+            'Journals to be included in articlemeta (%d)',
+            len(new_journals)
+        )
         for ndx, item in enumerate(new_journals):
             ndx += 1
             item = item.split('_')
             try:
                 journal_meta = ctrl.load_journal(item[0], item[1])
             except:
-                logger.error('Fail to load journal into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                logger.error(
+                    'Fail to load journal into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
                 continue
             if not journal_meta:
-                logger.error('Fail to load journal into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                logger.error(
+                    'Fail to load journal into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
                 continue
             rc.add_journal(json.dumps(journal_meta))
-            logger.debug('Journal (%d, %d) loaded into Articlemeta (%s)' % (ndx, len(new_journals), '_'.join([item[0], item[1]])))
+            logger.debug(
+                'Journal (%d, %d) loaded into Articlemeta (%s)',
+                ndx,
+                len(new_journals),
+                '_'.join([item[0], item[1]])
+            )
 
         # Removing Journals
         if not len(to_remove_journals) > 10:
-            logger.info('Journals to be removed from articlemeta (%d)' % len(to_remove_journals))
+            logger.info(
+                'Journals to be removed from articlemeta (%d)',
+                len(to_remove_journals)
+            )
             for index, item in enumerate(to_remove_journals):
                 item = item.split('_')
                 try:
@@ -230,24 +279,41 @@ def run(collection, issns):
             logger.info('To many journals to be removed, the remove task will be skipped')
 
         # Including and Updating Issues
-        logger.info('Issues to be included in articlemeta (%d)' % len(new_issues))
+        logger.info(
+            'Issues to be included in articlemeta (%d)',
+            len(new_issues)
+        )
         for ndx, item in enumerate(new_issues):
             ndx += 1
             item = item.split('_')
             try:
                 issue_meta = ctrl.load_issue(item[0], item[1])
             except:
-                logger.error('Fail to load issue into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                logger.error(
+                    'Fail to load issue into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
                 continue
             if not issue_meta:
-                logger.error('Fail to load issue into Articlemeta (%s)' % '_'.join([item[0], item[1]]))
+                logger.error(
+                    'Fail to load issue into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
                 continue
             rc.add_issue(json.dumps(issue_meta))
-            logger.debug('Issue (%d, %d) loaded into Articlemeta (%s)' % (ndx, len(new_issues), '_'.join([item[0], item[1]])))
+            logger.debug(
+                'Issue (%d, %d) loaded into Articlemeta (%s)',
+                ndx,
+                len(new_issues),
+                '_'.join([item[0], item[1]])
+            )
 
         # Removing Issues
         if not len(to_remove_issues) > 200:
-            logger.info('Issues to be removed from articlemeta (%d)' % len(to_remove_issues))
+            logger.info(
+                'Issues to be removed from articlemeta (%d)',
+                len(to_remove_issues)
+            )
             for item in to_remove_issues:
                 item = item.split('_')
                 try:
@@ -255,7 +321,8 @@ def run(collection, issns):
                 except UnauthorizedAccess:
                     logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
         else:
-            logger.info('To many issues to be removed, the remove task will be skipped')
+            logger.info(
+                'To many issues to be removed, the remove task will be skipped')
 
 
 def main():
@@ -296,7 +363,7 @@ def main():
     )
 
     args = parser.parse_args()
-    logger.setLevel(args.logging_level)
+    logger.setLevel(LOGGING_LEVEL or args.logging_level)
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )

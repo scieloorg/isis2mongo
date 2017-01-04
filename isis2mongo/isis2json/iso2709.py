@@ -17,7 +17,6 @@
 
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
-
 from struct import unpack
 
 CR =  '\x0D' # \r
@@ -31,19 +30,22 @@ TAG_LEN = 3
 DEFAULT_ENCODING = 'ASCII'
 SUBFIELD_DELIMITER = '^'
 
+
 class IsoFile(object):
 
-    def __init__(self, filename, encoding = DEFAULT_ENCODING):
+    def __init__(self, filename, encoding=DEFAULT_ENCODING, force=False):
         self.file = open(filename, 'rb')
         self.encoding = encoding
+        self.force = force
 
     def __iter__(self):
         return self
 
     def next(self):
+
         return IsoRecord(self)
 
-    __next__ = next # Python 3 compatibility
+    __next__ = next  # Python 3 compatibility
 
     def read(self, size):
         ''' read and drop all CR and LF characters '''
@@ -56,17 +58,18 @@ class IsoFile(object):
             chunk = self.file.read(size-count)
             if len(chunk) == 0:
                 break
-            chunk = chunk.replace(CR+LF,'')
+            chunk = chunk.replace(CR+LF, '')
             if CR in chunk:
-                chunk = chunk.replace(CR,'')
+                chunk = chunk.replace(CR, '')
             if LF in chunk:
-                chunk = chunk.replace(LF,'')
+                chunk = chunk.replace(LF, '')
             count += len(chunk)
             chunks.append(chunk)
         return ''.join(chunks)
 
     def close(self):
         self.file.close()
+
 
 class IsoRecord(object):
     label_part_names = ('rec_len rec_status impl_codes indicator_len identifier_len'
