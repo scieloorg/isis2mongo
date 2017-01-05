@@ -324,6 +324,8 @@ def run(collection, issns):
             logger.info(
                 'To many issues to be removed, the remove task will be skipped')
 
+    logger.info('Process Isis2mongo Finished')
+
 
 def main():
     parser = argparse.ArgumentParser(
