@@ -192,7 +192,7 @@ def run(collection, issns):
 
         # Including and Updating Documents
         logger.info(
-            'Documents to be included in articlemeta (%d)',
+            'Documents being included into articlemeta (%d)',
             len(new_documents)
         )
         for ndx, item in enumerate(new_documents):
@@ -230,11 +230,11 @@ def run(collection, issns):
             )
 
         # Removing Documents
+        logger.info(
+            'Documents to be removed from articlemeta (%d)',
+            len(to_remove_documents)
+        )
         if not len(to_remove_documents) > 2000:
-            logger.info(
-                'Documents to be removed from articlemeta (%d)',
-                len(to_remove_documents)
-            )
             for item in to_remove_documents:
                 item = item.split('_')
                 try:
@@ -246,7 +246,7 @@ def run(collection, issns):
 
         # Including and Updating Journals
         logger.info(
-            'Journals to be included in articlemeta (%d)',
+            'Journals being included into articlemeta (%d)',
             len(new_journals)
         )
         for ndx, item in enumerate(new_journals):
@@ -284,11 +284,11 @@ def run(collection, issns):
             )
 
         # Removing Journals
-        if not len(to_remove_journals) > 10:
-            logger.info(
-                'Journals to be removed from articlemeta (%d)',
-                len(to_remove_journals)
-            )
+        logger.info(
+            'Journals to be removed from articlemeta (%d)',
+            len(to_remove_journals)
+        )
+        if not len(to_remove_journals) > 5:
             for index, item in enumerate(to_remove_journals):
                 item = item.split('_')
                 try:
@@ -300,7 +300,7 @@ def run(collection, issns):
 
         # Including and Updating Issues
         logger.info(
-            'Issues to be included in articlemeta (%d)',
+            'Issues to being included into articlemeta (%d)',
             len(new_issues)
         )
         for ndx, item in enumerate(new_issues):
@@ -340,11 +340,11 @@ def run(collection, issns):
             )
 
         # Removing Issues
-        if not len(to_remove_issues) > 200:
-            logger.info(
-                'Issues to be removed from articlemeta (%d)',
-                len(to_remove_issues)
-            )
+        logger.info(
+            'Issues to be removed from articlemeta (%d)',
+            len(to_remove_issues)
+        )
+        if not len(to_remove_issues) > 20:
             for item in to_remove_issues:
                 item = item.split('_')
                 try:
