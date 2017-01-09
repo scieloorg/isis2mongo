@@ -35,6 +35,7 @@ class DataBroker(object):
         self.collections_ids = []
 
     def __enter__(self):
+        logger.info('Creating temporary database (%s)', self.database_name)
         self.mongoconn = None
         self.mongocl = None
         self.mongodb
@@ -42,6 +43,7 @@ class DataBroker(object):
         return self
 
     def __exit__(self, *args):
+        logger.info('Deleting temporary database (%s)', self.database_name)
         if self.drop:
             self.mongocl.drop_database(self.database_name)
 

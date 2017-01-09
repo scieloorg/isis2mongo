@@ -10,6 +10,7 @@ import json
 
 from articlemeta.client import ThriftClient
 from articlemeta.client import UnauthorizedAccess
+from articlemeta.client import ServerError
 
 from controller import DataBroker, IsisDataBroker
 
@@ -205,13 +206,23 @@ def run(collection, issns):
                     '_'.join([item[0], item[1]])
                 )
                 continue
+
             if not document_meta:
                 logger.error(
                     'Fail to load document into Articlemeta (%s)',
                     '_'.join([item[0], item[1]])
                 )
                 continue
-            rc.add_document(json.dumps(document_meta))
+
+            try:
+                rc.add_document(json.dumps(document_meta))
+            except ServerError:
+                logger.error(
+                    'Fail to load document into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
+                continue
+
             logger.debug(
                 'Document (%d, %d) loaded into Articlemeta (%s)',
                 ndx, len(new_documents),
@@ -255,7 +266,16 @@ def run(collection, issns):
                     '_'.join([item[0], item[1]])
                 )
                 continue
-            rc.add_journal(json.dumps(journal_meta))
+
+            try:
+                rc.add_journal(json.dumps(journal_meta))
+            except ServerError:
+                logger.error(
+                    'Fail to load document into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
+                continue
+
             logger.debug(
                 'Journal (%d, %d) loaded into Articlemeta (%s)',
                 ndx,
@@ -286,6 +306,7 @@ def run(collection, issns):
         for ndx, item in enumerate(new_issues):
             ndx += 1
             item = item.split('_')
+
             try:
                 issue_meta = ctrl.load_issue(item[0], item[1])
             except:
@@ -294,13 +315,23 @@ def run(collection, issns):
                     '_'.join([item[0], item[1]])
                 )
                 continue
+
             if not issue_meta:
                 logger.error(
                     'Fail to load issue into Articlemeta (%s)',
                     '_'.join([item[0], item[1]])
                 )
                 continue
-            rc.add_issue(json.dumps(issue_meta))
+
+            try:
+                rc.add_issue(json.dumps(issue_meta))
+            except ServerError:
+                logger.error(
+                    'Fail to load document into Articlemeta (%s)',
+                    '_'.join([item[0], item[1]])
+                )
+                continue
+
             logger.debug(
                 'Issue (%d, %d) loaded into Articlemeta (%s)',
                 ndx,
