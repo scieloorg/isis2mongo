@@ -390,13 +390,13 @@ def main():
     parser.add_argument(
         '--logging_level',
         '-l',
-        default='INFO',
+        default=LOGGING_LEVEL,
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
         help='Logggin level'
     )
 
     args = parser.parse_args()
-    logger.setLevel(LOGGING_LEVEL or args.logging_level)
+    logger.setLevel(args.logging_level)
     logging.basicConfig(
         format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
     )
