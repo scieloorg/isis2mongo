@@ -21,6 +21,7 @@ services:
       - ARTICLEMETA_THRIFTSERVER=localhost:11620
       - ARTICLEMETA_ADMINTOKEN=admin
       - LOGGING_LEVEL=DEBUG
+      - SENTRY_HANDLER=
     stdin_open: True
     tty: True
     command: isis2mongo_run --help

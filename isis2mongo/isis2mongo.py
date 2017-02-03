@@ -3,6 +3,7 @@
 import argparse
 import subprocess
 import logging
+import logging.config
 import os
 from datetime import datetime
 import uuid
@@ -26,7 +27,45 @@ DATABASES = (
 ADMINTOKEN = os.environ.get('ARTICLEMETA_ADMINTOKEN', 'admin')
 ARTICLEMETA_THRIFTSERVER = os.environ.get('ARTICLEMETA_THRIFTSERVER', 'admin')
 ISO_PATH = os.environ.get('ISO_PATH', os.path.dirname(os.path.abspath(__file__)))
+SENTRY_HANDLER = os.environ.get('SENTRY_HANDLER', None)
 LOGGING_LEVEL = os.environ.get('LOGGING_LEVEL', None)
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': True,
+
+    'formatters': {
+        'console': {
+            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            'datefmt': '%H:%M:%S',
+            },
+        },
+    'handlers': {
+        'console': {
+            'level': LOGGING_LEVEL,
+            'class': 'logging.StreamHandler',
+            'formatter': 'console'
+            }
+        },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': LOGGING_LEVEL,
+            'propagate': False,
+            },
+        'isis2mongo.isis2mongo': {
+            'level': LOGGING_LEVEL,
+            'propagate': True,
+        },
+    }
+}
+
+if SENTRY_HANDLER:
+    LOGGING['handlers']['sentry'] = {
+        'level': 'ERROR',
+        'class': 'raven.handlers.logging.SentryHandler',
+        'dsn': SENTRY_HANDLER,
+    }
+    LOGGING['loggers']['']['handlers'].append('sentry')
 
 
 def issue_pid(record):
@@ -392,13 +431,13 @@ def main():
         '-l',
         default=LOGGING_LEVEL,
         choices=['DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL'],
-        help='Logggin level'
+        help='Loggin level'
     )
 
     args = parser.parse_args()
-    logger.setLevel(args.logging_level)
-    logging.basicConfig(
-        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-    )
+    LOGGING['handlers']['console']['level'] = args.logging_level
+    for lg, content in LOGGING['loggers'].items():
+        content['level'] = args.logging_level
+    logging.config.dictConfig(LOGGING)
 
     run(args.collection, args.issns)
