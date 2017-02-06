@@ -8,6 +8,7 @@ import os
 from datetime import datetime
 import uuid
 import json
+import re
 
 from articlemeta.client import ThriftClient
 from articlemeta.client import UnauthorizedAccess
@@ -68,12 +69,31 @@ if SENTRY_HANDLER:
     LOGGING['loggers']['']['handlers'].append('sentry')
 
 
+REGEX_FIXISSUEID = re.compile(r'^[0-9]*')
+
+
 def issue_pid(record):
+    """
+    This method returns the ISSUE PID according to values registered in
+    v35 and v36.
+    input: v35: 0032-281X v36: 20023
+    output: 0032-281X20020003
+
+    input: v35: 0032-281X v36: 200221
+    output: 0032-281X20020021
+
+    input: v35: 0032-281X v36: 20021-4
+    output: 0032-281X20020001
+
+    input: v35: 0032-281X v36: 2002
+    output: 0032-281X20020000
+    """
 
     try:
         issn = record.get('v35', [{'_': None}])[0]['_']
         publication_year = record.get('v36', [{'_': None}])[0]['_'][0:4]
-        order = "%04d" % int(record.get('v36', [{'_': None}])[0]['_'][4:])
+        issue_order = REGEX_FIXISSUEID.match(record.get('v36', [{'_': None}])[0]['_'][4:]).group() or 0
+        order = "%04d" % int(issue_order)
     except TypeError:
         return None
 
@@ -137,6 +157,8 @@ def load_isis_records(collection, issns=None):
             try:
                 record = prepare_record(collection, record)
             except:
+                import pdb; pdb.set_trace()
+                record = prepare_record(collection, record)
                 logger.error('Fail to load document. Integrity error.')
                 continue
 
