@@ -11,7 +11,7 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
     CHANGES = f.read()
 
 install_requires = [
-    'articlemetaapi>=1.6.15',
+    'articlemetaapi>=1.6.16',
     'pymongo',
     'raven'
     ]
@@ -20,7 +20,7 @@ test_requires = []
 
 setup(
     name="isis2mongo",
-    version='1.7.3',
+    version='1.8.3',
     description="Processamento de alimentação do articlemeta",
     author="SciELO",
     author_email="scielo-dev@googlegroups.com",
