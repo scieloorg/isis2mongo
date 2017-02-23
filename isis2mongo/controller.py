@@ -113,7 +113,7 @@ class DataBroker(object):
     def load_journal(self, collection, pid):
 
         metadata = self.mongodb['journals'].find_one(
-            {'code': pid, 'collection': collection})
+            {'code': pid, 'collection': collection, 'processing_date': processing_date})
         del(metadata['_id'])
         del(metadata['journal'])
 
@@ -181,7 +181,7 @@ class DataBroker(object):
             self.issues_ids.append('_'.join([record['collection'], record['code'], record['processing_date'].replace('-', '')]))
 
         if len(record['code']) == 9:
-            self.journals_ids.append('_'.join([record['collection'], record['code']]))
+            self.journals_ids.append('_'.join([record['collection'], record['code'], record['processing_date'].replace('-', '')]))
 
         try:
             logger.debug('Recording (%s)', record['collection']+record['code'])

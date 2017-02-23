@@ -120,8 +120,9 @@ def load_isis_records(collection, issns=None):
         record['collection'] = collection
         record['code'] = pid
         record['v880'] = [{'_': pid}]  # rewriting pid in case the v880 do not exists in record.
-        processing_date = record.get('v91', [{'_': datetime.now().isoformat()[:10]}])[0]['_'].replace('-', '') or datetime.now().isoformat()[:10].replace('-', '')
+        processing_date = record.get('v91', record.get('v941', [{'_': datetime.now().isoformat()[:10]}]))[0]['_'].replace('-', '') or datetime.now().isoformat()[:10].replace('-', '')
         record['processing_date'] = datetime.strptime(processing_date, '%Y%m%d').isoformat()[:10]
+
         if len(pid) == 9:
             record['journal'] = pid
 
@@ -157,7 +158,6 @@ def load_isis_records(collection, issns=None):
             try:
                 record = prepare_record(collection, record)
             except:
-                import pdb; pdb.set_trace()
                 record = prepare_record(collection, record)
                 logger.error('Fail to load document. Integrity error.')
                 continue
@@ -214,12 +214,12 @@ def load_articlemeta_journals_ids(collection, issns=None):
                 'Loading articlemeta journal id (%s)',
                 '_'.join([journal.collection, journal.code])
             )
-            journals_pids.append('_'.join([journal.collection, journal.code]))
+            journals_pids.append('_'.join([journal.collection, journal.code, journal.processing_date.replace('-', '')]))
 
     return journals_pids
 
 
-def run(collection, issns):
+def run(collection, issns, full_rebuild=False):
 
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
@@ -235,6 +235,11 @@ def run(collection, issns):
     articlemeta_journals = set(
         load_articlemeta_journals_ids(collection, issns))
 
+    if full_rebuild is True:
+        articlemeta_documents = set([])
+        articlemeta_issues = set([])
+        articlemeta_journals = set([])
+
     with DataBroker(uuid.uuid4()) as ctrl:
         for coll, record in load_isis_records(collection, issns):
             ctrl.write_record(coll, record)
@@ -247,9 +252,17 @@ def run(collection, issns):
         new_issues = list(legacy_issues - articlemeta_issues)
         new_journals = list(legacy_journals - articlemeta_journals)
 
-        to_remove_documents = list(articlemeta_documents - legacy_documents)
-        to_remove_issues = list(articlemeta_issues - legacy_issues)
-        to_remove_journals = list(articlemeta_journals - legacy_journals)
+        am_document_pids_only = set([i[0:27] for i in articlemeta_documents])
+        lg_document_pids_only = set([i[0:27] for i in legacy_documents])
+        to_remove_documents = list(am_document_pids_only - lg_document_pids_only)
+
+        am_issue_pids_only = set([i[0:21] for i in articlemeta_issues])
+        lg_issue_pids_only = set([i[0:21] for i in legacy_issues])
+        to_remove_issues = list(am_issue_pids_only - lg_issue_pids_only)
+
+        am_journals_pids_only = set([i[0:13] for i in articlemeta_journals])
+        lg_journals_pids_only = set([i[0:13] for i in legacy_journals])
+        to_remove_journals = list(am_journals_pids_only - lg_journals_pids_only)
 
         # Including and Updating Documents
         logger.info(
@@ -361,7 +374,7 @@ def run(collection, issns):
 
         # Including and Updating Issues
         logger.info(
-            'Issues to being included into articlemeta (%d)',
+            'Issues being included into articlemeta (%d)',
             len(new_issues)
         )
         for ndx, item in enumerate(new_issues):
@@ -437,6 +450,13 @@ def main():
     )
 
     parser.add_argument(
+        '--full_rebuild',
+        '-f',
+        action='store_true',
+        help='Force update all documents'
+    )
+
+    parser.add_argument(
         '--output_file',
         '-r',
         help='File to receive the dumped data'
@@ -462,4 +482,4 @@ def main():
         content['level'] = args.logging_level
     logging.config.dictConfig(LOGGING)
 
-    run(args.collection, args.issns)
+    run(args.collection, args.issns, args.full_rebuild)
