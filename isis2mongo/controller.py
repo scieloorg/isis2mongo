@@ -113,7 +113,7 @@ class DataBroker(object):
     def load_journal(self, collection, pid):
 
         metadata = self.mongodb['journals'].find_one(
-            {'code': pid, 'collection': collection, 'processing_date': processing_date})
+            {'code': pid, 'collection': collection})
         del(metadata['_id'])
         del(metadata['journal'])
 
