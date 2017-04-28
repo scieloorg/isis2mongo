@@ -20,6 +20,8 @@ services:
       - ARTICLEMETA_DOMAIN=localhost
       - ARTICLEMETA_THRIFTSERVER=localhost:11620
       - ARTICLEMETA_ADMINTOKEN=admin
+      - MONGODB_URI=mongodb://mongo
+      - MONGODB_PORT=27017
       - LOGGING_LEVEL=DEBUG
       - SENTRY_HANDLER=
     stdin_open: True

@@ -49,9 +49,12 @@ class DataBroker(object):
 
     @property
     def mongoclient(self):
+
+        uri = os.environ.get('MONGODB_URI', "mongodb://mongo")
+        port = os.environ.get('MONGODB_PORT', 27017)
+
         if not self.mongocl:
-            self.mongocl = MongoClient(
-                'mongo', 27017)
+            self.mongocl = MongoClient(uri, int(port))
 
         return self.mongocl
 

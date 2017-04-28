@@ -25,6 +25,9 @@ DATABASES = (
     ('bib4cit', 'references'),
 )
 
+SECURE_ARTICLE_DELETIONS_NUMBER = 2000
+SECURE_ISSUE_DELETIONS_NUMBER = 20
+SECURE_JOURNAL_DELETIONS_NUMBER = 5
 ADMINTOKEN = os.environ.get('ARTICLEMETA_ADMINTOKEN', 'admin')
 ARTICLEMETA_THRIFTSERVER = os.environ.get('ARTICLEMETA_THRIFTSERVER', 'admin')
 ISO_PATH = os.environ.get('ISO_PATH', os.path.dirname(os.path.abspath(__file__)))
@@ -154,11 +157,9 @@ def load_isis_records(collection, issns=None):
         for ndx, record in enumerate(isis_db.read()):
             ndx += 1
             logger.debug('Reading record (%d) from iso (%s)', ndx, isofile)
-
             try:
                 record = prepare_record(collection, record)
             except:
-                record = prepare_record(collection, record)
                 logger.error('Fail to load document. Integrity error.')
                 continue
 
@@ -219,7 +220,7 @@ def load_articlemeta_journals_ids(collection, issns=None):
     return journals_pids
 
 
-def run(collection, issns, full_rebuild=False):
+def run(collection, issns, full_rebuild=False, force_delete=False):
 
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
@@ -308,7 +309,7 @@ def run(collection, issns, full_rebuild=False):
             'Documents to be removed from articlemeta (%d)',
             len(to_remove_documents)
         )
-        if not len(to_remove_documents) > 2000:
+        if not len(to_remove_documents) > SECURE_ARTICLE_DELETIONS_NUMBER or force_delete is True:
             for item in to_remove_documents:
                 item = item.split('_')
                 try:
@@ -362,7 +363,7 @@ def run(collection, issns, full_rebuild=False):
             'Journals to be removed from articlemeta (%d)',
             len(to_remove_journals)
         )
-        if not len(to_remove_journals) > 5:
+        if not len(to_remove_journals) > SECURE_JOURNAL_DELETIONS_NUMBER or force_delete is True:
             for index, item in enumerate(to_remove_journals):
                 item = item.split('_')
                 try:
@@ -418,7 +419,7 @@ def run(collection, issns, full_rebuild=False):
             'Issues to be removed from articlemeta (%d)',
             len(to_remove_issues)
         )
-        if not len(to_remove_issues) > 20:
+        if not len(to_remove_issues) > SECURE_ISSUE_DELETIONS_NUMBER or force_delete is True:
             for item in to_remove_issues:
                 item = item.split('_')
                 try:
@@ -453,7 +454,14 @@ def main():
         '--full_rebuild',
         '-f',
         action='store_true',
-        help='Force update all documents'
+        help='Update all documents'
+    )
+
+    parser.add_argument(
+        '--force_delete',
+        '-d',
+        action='store_true',
+        help='Force delete records when the number of deletions excedes the number of secure deletions'
     )
 
     parser.add_argument(
@@ -482,4 +490,4 @@ def main():
         content['level'] = args.logging_level
     logging.config.dictConfig(LOGGING)
 
-    run(args.collection, args.issns, args.full_rebuild)
+    run(args.collection, args.issns, args.full_rebuild, args.force_delete)
