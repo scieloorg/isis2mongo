@@ -16,9 +16,9 @@ services:
       - mongo
     volumes:
       - .:/app
+      - isis2mongo:/Users/fabiobatalha/Trabalho/isos
     environment:
-      - ARTICLEMETA_DOMAIN=localhost
-      - ARTICLEMETA_THRIFTSERVER=localhost:11620
+      - ARTICLEMETA_THRIFTSERVER=127.0.0.1:11620
       - ARTICLEMETA_ADMINTOKEN=admin
       - MONGODB_URI=mongodb://mongo
       - MONGODB_PORT=27017
@@ -26,7 +26,9 @@ services:
       - SENTRY_HANDLER=
     stdin_open: True
     tty: True
-    command: isis2mongo_run --help
+    command:
+      - isis2mongo_run
+      - --help
 
   mongo:
     image: mongo

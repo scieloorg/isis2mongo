@@ -16,5 +16,3 @@ RUN chmod -R 755 /app/*
 WORKDIR /app
 
 RUN python setup.py develop
-
-CMD ["isis2mongo_run", "--help"]

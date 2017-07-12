@@ -152,11 +152,33 @@ def load_isis_records(collection, issns=None):
         try:
             isis_db = IsisDataBroker(isofile)
         except IOError:
+            if iso == 'bib4cit':
+                logger.warning('No bib4cit found, it will continue without this file. The references must be in article database otherwise no references will be recorded')
+                continue
             raise ValueError('ISO file do not exists for the collection (%s), check the collection acronym or the path to the ISO file (%s)' % (collection, isofile))
 
-        for ndx, record in enumerate(isis_db.read()):
-            ndx += 1
+        for ndx, record in enumerate(isis_db.read(), 1):
             logger.debug('Reading record (%d) from iso (%s)', ndx, isofile)
+
+            """
+            Some records from the database artigo comes with invalid metadata
+            This "if" is ignoring records withour the field 706 in the article
+            database.
+            ex:
+            mfn= 15968
+            936  "^i0044-5967^y2010^o2"
+            9999  "../bases-work/aa/aa"
+            880  "S"
+            ..
+            mfn= 15969
+            936  "^i0044-5967^y2010^o2"
+            9999  "../bases-work/aa/aa"
+            880  "S"
+            ...
+            """
+            if iso == 'artigo' and '706' not in record:
+                continue
+
             try:
                 record = prepare_record(collection, record)
             except:
@@ -227,7 +249,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
     logger.info('Running Isis2mongo')
     logger.debug('Thrift Server: %s', ARTICLEMETA_THRIFTSERVER)
     logger.debug('Admin Token: %s', ADMINTOKEN)
-    logger.info('Loading data for collection: %s', collection)
+    logger.info('Loading ArticleMeta identifiers for collection: %s', collection)
 
     articlemeta_documents = set(
         load_articlemeta_documents_ids(collection, issns))
@@ -243,7 +265,27 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
 
     with DataBroker(uuid.uuid4()) as ctrl:
         for coll, record in load_isis_records(collection, issns):
-            ctrl.write_record(coll, record)
+            if coll in ['issues', 'journals', 'references']:
+                ctrl.write_record(coll, record)
+                continue
+
+            if coll == 'articles':
+                if record['v706'][0]['_'] == 'o':
+                    processing_date = record.get('v91', [{'_': datetime.now().isoformat()[:10]}])
+
+                if record['v706'][0]['_'] not in ['h', 'c']:
+                    continue
+
+                if record['v706'][0]['_'] == 'h':
+                    record['v91'] = [{'_': processing_date}]
+                    ctrl.write_record(coll, record)
+                    continue
+
+                if record['v706'][0]['_'] == 'c':
+                    ctrl.write_record('references', record)
+                    continue
+
+                import pdb; pdb.set_trace()
 
         legacy_documents = set(ctrl.articles_ids)
         legacy_issues = set(ctrl.issues_ids)
@@ -462,12 +504,6 @@ def main():
         '-d',
         action='store_true',
         help='Force delete records when the number of deletions excedes the number of secure deletions'
-    )
-
-    parser.add_argument(
-        '--output_file',
-        '-r',
-        help='File to receive the dumped data'
     )
 
     parser.add_argument(
