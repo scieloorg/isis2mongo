@@ -263,6 +263,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
         articlemeta_issues = set([])
         articlemeta_journals = set([])
 
+    processing_date = [{'_': datetime.now().isoformat()[:10]}]
     with DataBroker(uuid.uuid4()) as ctrl:
         for coll, record in load_isis_records(collection, issns):
             if coll in ['issues', 'journals', 'references']:
@@ -270,7 +271,6 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
                 continue
 
             if coll == 'articles':
-                processing_date = [{'_': datetime.now().isoformat()[:10]}]
                 if record['v706'][0]['_'] == 'o':
                     processing_date = record.get('v91', processing_date)
 
