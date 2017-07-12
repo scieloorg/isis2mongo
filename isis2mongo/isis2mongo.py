@@ -270,14 +270,15 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
                 continue
 
             if coll == 'articles':
+                processing_date = [{'_': datetime.now().isoformat()[:10]}]
                 if record['v706'][0]['_'] == 'o':
-                    processing_date = record.get('v91', [{'_': datetime.now().isoformat()[:10]}])
+                    processing_date = record.get('v91', processing_date)
 
                 if record['v706'][0]['_'] not in ['h', 'c']:
                     continue
 
                 if record['v706'][0]['_'] == 'h':
-                    record['v91'] = [{'_': processing_date}]
+                    record['v91'] = record.get('v91', processing_date)
                     ctrl.write_record(coll, record)
                     continue
 
