@@ -20,7 +20,7 @@ test_requires = []
 
 setup(
     name="isis2mongo",
-    version='1.12.0',
+    version='1.12.1',
     description="Processamento de alimentação do articlemeta",
     author="SciELO",
     author_email="scielo-dev@googlegroups.com",
