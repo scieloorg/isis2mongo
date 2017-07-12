@@ -286,8 +286,6 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
                     ctrl.write_record('references', record)
                     continue
 
-                import pdb; pdb.set_trace()
-
         legacy_documents = set(ctrl.articles_ids)
         legacy_issues = set(ctrl.issues_ids)
         legacy_journals = set(ctrl.journals_ids)
