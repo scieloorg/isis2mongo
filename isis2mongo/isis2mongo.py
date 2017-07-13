@@ -191,6 +191,7 @@ def load_isis_records(collection, issns=None):
 
                 if record['706'][0]['_'] == 'h':
                     record['91'] = record.get('91', temp_processing_date)
+                    rec_coll = 'articles'
 
                 if record['706'][0]['_'] == 'c':
                     rec_coll = 'references'
