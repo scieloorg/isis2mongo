@@ -180,20 +180,19 @@ def load_isis_records(collection, issns=None):
             ...
             """
             if coll == 'articles':
-
                 if '706' not in record:
                     continue
 
-                if record['v706'][0]['_'] not in ['h', 'c']:
+                if record['706'][0]['_'] == 'o':
+                    temp_processing_date = record.get('91', temp_processing_date)
+
+                if record['706'][0]['_'] not in ['h', 'c']:
                     continue
 
-                if record['v706'][0]['_'] == 'o':
-                    temp_processing_date = record.get('v91', temp_processing_date)
+                if record['706'][0]['_'] == 'h':
+                    record['91'] = record.get('91', temp_processing_date)
 
-                if record['v706'][0]['_'] == 'h':
-                    record['v91'] = record.get('v91', temp_processing_date)
-
-                if record['v706'][0]['_'] == 'c':
+                if record['706'][0]['_'] == 'c':
                     rec_coll = 'references'
 
             try:
