@@ -146,6 +146,7 @@ def load_isis_records(collection, issns=None):
         return record
 
     for iso, coll in DATABASES:
+        rec_coll = coll
         logger.info('Recording (%s) records for collection (%s)', coll, collection)
         isofile = '%s/../isos/%s/%s.iso' % (ISO_PATH, collection, iso)
 
@@ -156,6 +157,8 @@ def load_isis_records(collection, issns=None):
                 logger.warning('No bib4cit found, it will continue without this file. The references must be in article database otherwise no references will be recorded')
                 continue
             raise ValueError('ISO file do not exists for the collection (%s), check the collection acronym or the path to the ISO file (%s)' % (collection, isofile))
+
+        temp_processing_date = [{'_': datetime.now().strftime("%Y%m%d")}]
 
         for ndx, record in enumerate(isis_db.read(), 1):
             logger.debug('Reading record (%d) from iso (%s)', ndx, isofile)
@@ -176,8 +179,22 @@ def load_isis_records(collection, issns=None):
             880  "S"
             ...
             """
-            if iso == 'artigo' and '706' not in record:
-                continue
+            if coll == 'articles':
+
+                if '706' not in record:
+                    continue
+
+                if record['v706'][0]['_'] not in ['h', 'c']:
+                    continue
+
+                if record['v706'][0]['_'] == 'o':
+                    temp_processing_date = record.get('v91', temp_processing_date)
+
+                if record['v706'][0]['_'] == 'h':
+                    record['v91'] = record.get('v91', temp_processing_date)
+
+                if record['v706'][0]['_'] == 'c':
+                    rec_coll = 'references'
 
             try:
                 record = prepare_record(collection, record)
@@ -191,7 +208,7 @@ def load_isis_records(collection, issns=None):
             if issns and not record['journal'] in issns:
                 continue
 
-            yield (coll, record)
+            yield (rec_coll, record)
 
 
 def load_articlemeta_issues_ids(collection, issns=None):
@@ -263,28 +280,9 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
         articlemeta_issues = set([])
         articlemeta_journals = set([])
 
-    processing_date = [{'_': datetime.now().isoformat()[:10]}]
     with DataBroker(uuid.uuid4()) as ctrl:
         for coll, record in load_isis_records(collection, issns):
-            if coll in ['issues', 'journals', 'references']:
-                ctrl.write_record(coll, record)
-                continue
-
-            if coll == 'articles':
-                if record['v706'][0]['_'] == 'o':
-                    processing_date = record.get('v91', processing_date)
-
-                if record['v706'][0]['_'] not in ['h', 'c']:
-                    continue
-
-                if record['v706'][0]['_'] == 'h':
-                    record['v91'] = record.get('v91', processing_date)
-                    ctrl.write_record(coll, record)
-                    continue
-
-                if record['v706'][0]['_'] == 'c':
-                    ctrl.write_record('references', record)
-                    continue
+            ctrl.write_record(coll, record)
 
         legacy_documents = set(ctrl.articles_ids)
         legacy_issues = set(ctrl.issues_ids)
