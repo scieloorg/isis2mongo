@@ -170,6 +170,9 @@ class DataBroker(object):
 
         return metadata
 
+    def update_field(self, database, document_id, field, value):
+        self.mongodb[database].update({'code': document_id}, {'$set': {field: value}})
+
     def write_record(self, database_collection, record):
 
         fltr = {

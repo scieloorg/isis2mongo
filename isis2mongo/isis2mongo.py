@@ -18,6 +18,7 @@ from controller import DataBroker, IsisDataBroker
 
 logger = logging.getLogger(__name__)
 
+# Do not change this order
 DATABASES = (
     ('title', 'journals'),
     ('issue', 'issues'),
@@ -281,8 +282,19 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
         articlemeta_journals = set([])
 
     with DataBroker(uuid.uuid4()) as ctrl:
+        update_issue_id = ''
         for coll, record in load_isis_records(collection, issns):
             ctrl.write_record(coll, record)
+            # Write field 4 in issue database
+            rec_type = record.get('v706', [{'_': ''}])[0]['_']
+            if rec_type == 'h':
+                if update_issue_id == record['v880'][0]['_'][1:18]:
+                    continue
+                update_database = 'issues'
+                update_field = 'v4'
+                update_value = record['v4'][0]['_']
+                update_issue_id = record['v880'][0]['_'][1:18]
+                ctrl.update_field(update_database, update_issue_id, update_field, update_value)
 
         legacy_documents = set(ctrl.articles_ids)
         legacy_issues = set(ctrl.issues_ids)
