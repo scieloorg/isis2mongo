@@ -154,8 +154,8 @@ def load_isis_records(collection, issns=None):
         try:
             isis_db = IsisDataBroker(isofile)
         except IOError:
-            if iso == 'bib4cit':
-                logger.warning('No bib4cit found, it will continue without this file. The references must be in article database otherwise no references will be recorded')
+            if iso in ['bib4cit', 'issue']:
+                logger.warning('No %s found, it will continue without this file. The references or issues must be in article database otherwise no references or issues will be recorded', iso)
                 continue
             raise ValueError('ISO file do not exists for the collection (%s), check the collection acronym or the path to the ISO file (%s)' % (collection, isofile))
 
@@ -186,9 +186,14 @@ def load_isis_records(collection, issns=None):
 
                 if record['706'][0]['_'] == 'o':
                     temp_processing_date = record.get('91', temp_processing_date)
-
-                if record['706'][0]['_'] not in ['h', 'c']:
                     continue
+
+                if record['706'][0]['_'] not in ['h', 'c', 'i']:
+                    continue
+
+                if record['706'][0]['_'] == 'i':
+                    record['91'] = record.get('91', temp_processing_date)
+                    rec_coll = 'issues'
 
                 if record['706'][0]['_'] == 'h':
                     record['91'] = record.get('91', temp_processing_date)
