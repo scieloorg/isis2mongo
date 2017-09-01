@@ -1,6 +1,8 @@
 import logging
 import pymongo
 import os
+from datetime import datetime
+
 from pymongo import MongoClient
 
 from isis2json import isis2json
@@ -29,10 +31,6 @@ class DataBroker(object):
 
         self.database_name = 'isis2mongo_%s' % database_id
         self.drop = drop
-        self.journals_ids = []
-        self.issues_ids = []
-        self.articles_ids = []
-        self.collections_ids = []
 
     def __enter__(self):
         logger.info('Creating temporary database (%s)', self.database_name)
@@ -46,6 +44,49 @@ class DataBroker(object):
         logger.info('Deleting temporary database (%s)', self.database_name)
         if self.drop:
             self.mongocl.drop_database(self.database_name)
+
+    @property
+    def journals_ids(self):
+        journals = []
+        for journal in self.mongodb['journals'].find({}, {'collection': 1, 'code': 1, 'processing_date': 1}):
+            journals.append(
+              '_'.join(
+                [journal['collection'], journal['code'], journal['processing_date'].replace('-', '')])
+            )
+
+        return journals
+
+    @property
+    def issues_ids(self):
+        issues = []
+        for issue in self.mongodb['issues'].find({}, {'collection': 1, 'code': 1, 'processing_date': 1}):
+            issues.append(
+              '_'.join(
+                [issue['collection'], issue['code'], issue['processing_date'].replace('-', '')])
+            )
+
+        return issues
+
+    @property
+    def articles_ids(self):
+        articles = []
+        for article in self.mongodb['articles'].find({}, {'collection': 1, 'code': 1, 'processing_date': 1}):
+            articles.append(
+              '_'.join(
+                [article['collection'], article['code'], article['processing_date'].replace('-', '')])
+            )
+        return articles
+
+    @property
+    def references_ids(self):
+        references = []
+        for reference in self.mongodb['references'].find({}, {'collection': 1, 'code': 1, 'processing_date': 1}):
+            references.append(
+              '_'.join(
+                [reference['collection'], reference['code'], reference['processing_date'].replace('-', '')])
+            )
+
+        return references
 
     @property
     def mongoclient(self):
@@ -172,6 +213,15 @@ class DataBroker(object):
 
     def update_field(self, database, document_id, field, value):
         self.mongodb[database].update({'code': document_id}, {'$set': {field: value}})
+
+    def bulk_data(self, data):
+        from pymongo import errors
+        for database, records in data.items():
+            try:
+                self.mongodb[database].insert_many(records, ordered=False)
+            except errors.BulkWriteError as e:
+                # Ignore bulk erros, the errors are mainly related to legacy issues like duplicated keys in the legacy databases.
+                pass
 
     def write_record(self, database_collection, record):
 

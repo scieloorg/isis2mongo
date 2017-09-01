@@ -25,7 +25,7 @@ DATABASES = (
     ('artigo', 'articles'),
     ('bib4cit', 'references'),
 )
-
+BULK_SIZE = 100000
 SECURE_ARTICLE_DELETIONS_NUMBER = 2000
 SECURE_ISSUE_DELETIONS_NUMBER = 20
 SECURE_JOURNAL_DELETIONS_NUMBER = 5
@@ -181,25 +181,28 @@ def load_isis_records(collection, issns=None):
             ...
             """
             if coll == 'articles':
-                if '706' not in record:
+
+                field_706 = record.get('706', [{'_': None}])[0]['_']
+
+                if field_706 is None:
                     continue
 
-                if record['706'][0]['_'] == 'o':
+                if field_706 == 'o':
                     temp_processing_date = record.get('91', temp_processing_date)
                     continue
 
-                if record['706'][0]['_'] not in ['h', 'c', 'i']:
+                if field_706 not in ['h', 'c', 'i']:
                     continue
 
-                if record['706'][0]['_'] == 'i':
+                if field_706 == 'i':
                     record['91'] = record.get('91', temp_processing_date)
                     rec_coll = 'issues'
 
-                if record['706'][0]['_'] == 'h':
+                if field_706 == 'h':
                     record['91'] = record.get('91', temp_processing_date)
                     rec_coll = 'articles'
 
-                if record['706'][0]['_'] == 'c':
+                if field_706 == 'c':
                     rec_coll = 'references'
 
             try:
@@ -265,7 +268,7 @@ def load_articlemeta_journals_ids(collection, issns=None):
     return journals_pids
 
 
-def run(collection, issns, full_rebuild=False, force_delete=False):
+def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BULK_SIZE):
 
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
@@ -288,23 +291,47 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
 
     with DataBroker(uuid.uuid4()) as ctrl:
         update_issue_id = ''
+
+        fields_to_update_after_loading_documents = []
+        bulk = {}
+
+        bulk_count = 0
         for coll, record in load_isis_records(collection, issns):
-            ctrl.write_record(coll, record)
+            bulk_count += 1
+            bulk.setdefault(coll, [])
+            bulk[coll].append(record)
+            if bulk_count == bulk_size:
+                bulk_count = 0
+                ctrl.bulk_data(dict(bulk))
+                bulk = {}
+
+            # ctrl.write_record(coll, record)
             # Write field 4 in issue database
             rec_type = record.get('v706', [{'_': ''}])[0]['_']
             if rec_type == 'h':
                 if update_issue_id == record['v880'][0]['_'][1:18]:
                     continue
-                update_database = 'issues'
-                update_field = 'v4'
-                update_value = record['v4'][0]['_']
-                update_issue_id = record['v880'][0]['_'][1:18]
-                ctrl.update_field(update_database, update_issue_id, update_field, update_value)
+                fields_to_update_after_loading_documents.append([
+                    'issues',
+                    'v4',
+                    record['v4'][0]['_'],
+                    record['v880'][0]['_'][1:18]
+                ])
+        # bulk residual data
+        ctrl.bulk_data(dict(bulk))
 
+        logger.info('Updating fields metadata')
+        total_fields_to_update = len(fields_to_update_after_loading_documents)
+        for ndx, item in enumerate(fields_to_update_after_loading_documents, 1):
+            logger.debug("Updating (%d, %d) %s", ndx, total_fields_to_update, str(item))
+            ctrl.update_field(*item)
+
+        logger.info('Loading legacy identifiers')
         legacy_documents = set(ctrl.articles_ids)
         legacy_issues = set(ctrl.issues_ids)
         legacy_journals = set(ctrl.journals_ids)
 
+        logger.info('Producing lists of differences between ArticleMeta and Legacy databases')
         new_documents = list(legacy_documents - articlemeta_documents)
         new_issues = list(legacy_issues - articlemeta_issues)
         new_journals = list(legacy_journals - articlemeta_journals)
@@ -366,10 +393,14 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
             total_to_remove_documents
         )
 
-        skip_deletion = False
-        if not total_to_remove_documents > SECURE_ARTICLE_DELETIONS_NUMBER or force_delete is True:
-            skip_deletion = True
-            logger.info('To many documents to be removed, the remove task will be skipped')
+        skip_deletion = True
+        if total_to_remove_documents > SECURE_ARTICLE_DELETIONS_NUMBER:
+            logger.info('To many documents to be removed')
+            if force_delete is False:
+                skip_deletion = True
+                logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
+        else:
+            skip_deletion = False
 
         for item in to_remove_documents:
             item = item.split('_')
@@ -436,10 +467,15 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
             'Journals to be removed from articlemeta (%d)',
             total_to_remove_journals
         )
-        skip_deletion = False
-        if not total_to_remove_journals > SECURE_JOURNAL_DELETIONS_NUMBER or force_delete is True:
-            skip_deletion = True
-            logger.info('To many journals to be removed, the remove task will be skipped')
+
+        skip_deletion = True
+        if total_to_remove_journals > SECURE_JOURNAL_DELETIONS_NUMBER:
+            logger.info('To many journals to be removed')
+            if force_delete is False:
+                skip_deletion = True
+                logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
+        else:
+            skip_deletion = False
 
         for ndx, item in enumerate(to_remove_journals, 1):
             item = item.split('_')
@@ -508,10 +544,14 @@ def run(collection, issns, full_rebuild=False, force_delete=False):
             total_to_remove_issues
         )
 
-        skip_deletion = False
-        if not total_to_remove_issues > SECURE_ISSUE_DELETIONS_NUMBER or force_delete is True:
-            skip_deletion = True
-            logger.info('To many issues to be removed, the remove task will be skipped')
+        skip_deletion = True
+        if total_to_remove_documents > SECURE_ISSUE_DELETIONS_NUMBER:
+            logger.info('To many issues to be removed')
+            if force_delete is False:
+                skip_deletion = True
+                logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
+        else:
+            skip_deletion = False
 
         for ndx, item in enumerate(to_remove_issues, 1):
             item = item.split('_')
@@ -561,6 +601,14 @@ def main():
     )
 
     parser.add_argument(
+        '--bulk_size',
+        '-b',
+        type=int,
+        default=BULK_SIZE,
+        help='Max size to bulk data'
+    )
+
+    parser.add_argument(
         '--force_delete',
         '-d',
         action='store_true',
@@ -587,4 +635,4 @@ def main():
         content['level'] = args.logging_level
     logging.config.dictConfig(LOGGING)
 
-    run(args.collection, args.issns, args.full_rebuild, args.force_delete)
+    run(args.collection, args.issns, args.full_rebuild, args.force_delete, args.bulk_size)
