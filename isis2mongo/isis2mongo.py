@@ -449,7 +449,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                 rc.add_journal(json.dumps(journal_meta))
             except ServerError:
                 logger.error(
-                    'Fail to load document into Articlemeta (%s)',
+                    'Fail to load journal into Articlemeta (%s)',
                     '_'.join([item[0], item[1]])
                 )
                 continue
@@ -525,7 +525,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                 rc.add_issue(json.dumps(issue_meta))
             except ServerError:
                 logger.error(
-                    'Fail to load document into Articlemeta (%s)',
+                    'Fail to load issue into Articlemeta (%s)',
                     '_'.join([item[0], item[1]])
                 )
                 continue
