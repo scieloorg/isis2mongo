@@ -313,9 +313,9 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                     continue
                 fields_to_update_after_loading_documents.append([
                     'issues',
+                    record['v880'][0]['_'][1:18],
                     'v4',
-                    record['v4'][0]['_'],
-                    record['v880'][0]['_'][1:18]
+                    record['v4'][0]['_']
                 ])
         # bulk residual data
         ctrl.bulk_data(dict(bulk))
