@@ -214,9 +214,8 @@ class DataBroker(object):
     def update_field(self, collection, document_id, field, value):
         try:
             self.mongodb[collection].update({'code': document_id}, {'$set': {field: value}})
-        except pymongo.errors.WriteError:
-            import pdb; pdb.set_trace()
-            print('teste')
+        except:
+            logger.error('Fail to update field %s' % str([collection, document_id, field, value]))
 
     def bulk_data(self, data):
         from pymongo import errors
