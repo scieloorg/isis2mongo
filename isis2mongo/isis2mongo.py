@@ -321,11 +321,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         ctrl.bulk_data(dict(bulk))
 
         logger.info('Updating fields metadata')
-        total_fields_to_update = len(fields_to_update_after_loading_documents)
-        for ndx, item in enumerate(fields_to_update_after_loading_documents, 1):
-            logger.debug("Updating (%d, %d) %s", ndx, total_fields_to_update, str(item))
-            ctrl.update_field(*item)
-
+        ctrl.bulk_update_field('issues', fields_to_update_after_loading_documents)
         logger.info('Loading legacy identifiers')
         legacy_documents = set(ctrl.articles_ids)
         legacy_issues = set(ctrl.issues_ids)

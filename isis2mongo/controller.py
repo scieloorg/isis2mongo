@@ -4,6 +4,8 @@ import os
 from datetime import datetime
 
 from pymongo import MongoClient
+from pymongo import errors
+from pymongo.operations import UpdateOne
 
 from isis2json import isis2json
 
@@ -211,6 +213,19 @@ class DataBroker(object):
 
         return metadata
 
+    def bulk_update_field(self, collection, updates):
+        bk_updates = []
+        for collection, document_id, field, value in updates:
+            bk_updates.append(
+                UpdateOne({'code': document_id}, {'$set': {field: value}}, upsert=False)
+            )
+
+        try:
+            self.mongodb[collection].bulk_write(bk_updates, ordered=False)
+        except errors.BulkWriteError as e:
+            # Ignore bulk erros, the errors are mainly related to legacy issues like duplicated keys in the legacy databases.
+            pass
+
     def update_field(self, collection, document_id, field, value):
         try:
             self.mongodb[collection].update({'code': document_id}, {'$set': {field: value}})
@@ -218,10 +233,10 @@ class DataBroker(object):
             logger.error('Fail to update field %s' % str([collection, document_id, field, value]))
 
     def bulk_data(self, data):
-        from pymongo import errors
-        for database, records in data.items():
+
+        for collection, records in data.items():
             try:
-                self.mongodb[database].insert_many(records, ordered=False)
+                self.mongodb[collection].insert_many(records, ordered=False)
             except errors.BulkWriteError as e:
                 # Ignore bulk erros, the errors are mainly related to legacy issues like duplicated keys in the legacy databases.
                 pass
