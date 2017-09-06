@@ -541,7 +541,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         )
 
         skip_deletion = True
-        if total_to_remove_documents > SECURE_ISSUE_DELETIONS_NUMBER:
+        if total_to_remove_issues > SECURE_ISSUE_DELETIONS_NUMBER:
             logger.info('To many issues to be removed')
             if force_delete is False:
                 skip_deletion = True
