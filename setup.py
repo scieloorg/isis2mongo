@@ -12,8 +12,8 @@ with open(os.path.join(here, 'CHANGES.txt')) as f:
 
 install_requires = [
     'articlemetaapi==1.14.19',
-    'pymongo',
-    'raven'
+    'pymongo==3.4.0',
+    'raven==5.32.0'
     ]
 
 test_requires = []
