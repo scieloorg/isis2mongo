@@ -344,6 +344,42 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         lg_journals_pids_only = set([i[0:13] for i in legacy_journals])
         to_remove_journals = list(am_journals_pids_only - lg_journals_pids_only)
 
+        # Removing Documents
+        total_to_remove_documents = len(to_remove_documents)
+        logger.info(
+            'Documents to be removed from articlemeta (%d)',
+            total_to_remove_documents
+        )
+
+        skip_deletion = True
+        if total_to_remove_documents > SECURE_ARTICLE_DELETIONS_NUMBER:
+            logger.info('To many documents to be removed')
+            if force_delete is False:
+                skip_deletion = True
+                logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
+        else:
+            skip_deletion = False
+
+        for item in to_remove_documents:
+            item = item.split('_')
+            if skip_deletion is True:
+                logger.debug(
+                    'Document remove task (%d, %d) will be skipped (%s)',
+                    ndx,
+                    total_to_remove_documents,
+                    '_'.join([item[0], item[1]])
+                )
+            try:
+                rc.delete_document(item[1], item[0])
+                logger.debug(
+                    'Document (%d, %d) removed from Articlemeta (%s)',
+                    ndx,
+                    total_to_remove_documents,
+                    '_'.join([item[0], item[1]])
+                )
+            except UnauthorizedAccess:
+                logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+
         # Including and Updating Documents
         logger.info(
             'Documents being included into articlemeta (%d)',
@@ -382,42 +418,41 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                 '_'.join([item[0], item[1]])
             )
 
-        # Removing Documents
-        total_to_remove_documents = len(to_remove_documents)
+        # Removing Journals
+        total_to_remove_journals = len(to_remove_journals)
         logger.info(
-            'Documents to be removed from articlemeta (%d)',
-            total_to_remove_documents
+            'Journals to be removed from articlemeta (%d)',
+            total_to_remove_journals
         )
 
         skip_deletion = True
-        if total_to_remove_documents > SECURE_ARTICLE_DELETIONS_NUMBER:
-            logger.info('To many documents to be removed')
+        if total_to_remove_journals > SECURE_JOURNAL_DELETIONS_NUMBER:
+            logger.info('To many journals to be removed')
             if force_delete is False:
                 skip_deletion = True
                 logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
         else:
             skip_deletion = False
 
-        for item in to_remove_documents:
+        for ndx, item in enumerate(to_remove_journals, 1):
             item = item.split('_')
             if skip_deletion is True:
                 logger.debug(
-                    'Document remove task (%d, %d) will be skipped (%s)',
+                    'Journal remove task (%d, %d) will be skipped (%s)',
                     ndx,
-                    total_to_remove_documents,
+                    total_to_remove_journals,
                     '_'.join([item[0], item[1]])
                 )
             try:
-                rc.delete_document(item[1], item[0])
+                rc.delete_journal(item[1], item[0])
                 logger.debug(
-                    'Document (%d, %d) removed from Articlemeta (%s)',
+                    'Journal (%d, %d) removed from Articlemeta (%s)',
                     ndx,
-                    total_to_remove_documents,
+                    total_to_remove_journals,
                     '_'.join([item[0], item[1]])
                 )
             except UnauthorizedAccess:
                 logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
-
 
         # Including and Updating Journals
         logger.info(
@@ -457,37 +492,37 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                 '_'.join([item[0], item[1]])
             )
 
-        # Removing Journals
-        total_to_remove_journals = len(to_remove_journals)
+        # Removing Issues
+        total_to_remove_issues = len(to_remove_issues)
         logger.info(
-            'Journals to be removed from articlemeta (%d)',
-            total_to_remove_journals
+            'Issues to be removed from articlemeta (%d)',
+            total_to_remove_issues
         )
 
         skip_deletion = True
-        if total_to_remove_journals > SECURE_JOURNAL_DELETIONS_NUMBER:
-            logger.info('To many journals to be removed')
+        if total_to_remove_issues > SECURE_ISSUE_DELETIONS_NUMBER:
+            logger.info('To many issues to be removed')
             if force_delete is False:
                 skip_deletion = True
                 logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
         else:
             skip_deletion = False
 
-        for ndx, item in enumerate(to_remove_journals, 1):
+        for ndx, item in enumerate(to_remove_issues, 1):
             item = item.split('_')
             if skip_deletion is True:
                 logger.debug(
-                    'Journal remove task (%d, %d) will be skipped (%s)',
+                    'Issue remove task (%d, %d) will be skipped (%s)',
                     ndx,
-                    total_to_remove_journals,
+                    total_to_remove_issues,
                     '_'.join([item[0], item[1]])
                 )
             try:
-                rc.delete_journal(item[1], item[0])
+                rc.delete_issue(item[1], item[0])
                 logger.debug(
-                    'Journal (%d, %d) removed from Articlemeta (%s)',
+                    'Issue (%d, %d) removed from Articlemeta (%s)',
                     ndx,
-                    total_to_remove_journals,
+                    total_to_remove_issues,
                     '_'.join([item[0], item[1]])
                 )
             except UnauthorizedAccess:
@@ -532,42 +567,6 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                 len(new_issues),
                 '_'.join([item[0], item[1]])
             )
-
-        # Removing Issues
-        total_to_remove_issues = len(to_remove_issues)
-        logger.info(
-            'Issues to be removed from articlemeta (%d)',
-            total_to_remove_issues
-        )
-
-        skip_deletion = True
-        if total_to_remove_issues > SECURE_ISSUE_DELETIONS_NUMBER:
-            logger.info('To many issues to be removed')
-            if force_delete is False:
-                skip_deletion = True
-                logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
-        else:
-            skip_deletion = False
-
-        for ndx, item in enumerate(to_remove_issues, 1):
-            item = item.split('_')
-            if skip_deletion is True:
-                logger.debug(
-                    'Issue remove task (%d, %d) will be skipped (%s)',
-                    ndx,
-                    total_to_remove_issues,
-                    '_'.join([item[0], item[1]])
-                )
-            try:
-                rc.delete_issue(item[1], item[0])
-                logger.debug(
-                    'Issue (%d, %d) removed from Articlemeta (%s)',
-                    ndx,
-                    total_to_remove_issues,
-                    '_'.join([item[0], item[1]])
-                )
-            except UnauthorizedAccess:
-                logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
 
     logger.info('Process Isis2mongo Finished')
 
