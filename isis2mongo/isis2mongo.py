@@ -360,7 +360,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         else:
             skip_deletion = False
 
-        for item in to_remove_documents:
+        for ndx, item in enumerate(to_remove_documents, 1):
             item = item.split('_')
             if skip_deletion is True:
                 logger.debug(
