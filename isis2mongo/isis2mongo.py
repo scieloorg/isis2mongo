@@ -357,8 +357,8 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
             if force_delete is False:
                 skip_deletion = True
                 logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
-        else:
-            skip_deletion = False
+            else:
+                skip_deletion = False
 
         for ndx, item in enumerate(to_remove_documents, 1):
             item = item.split('_')
@@ -431,8 +431,8 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
             if force_delete is False:
                 skip_deletion = True
                 logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
-        else:
-            skip_deletion = False
+            else:
+                skip_deletion = False
 
         for ndx, item in enumerate(to_remove_journals, 1):
             item = item.split('_')
@@ -505,8 +505,8 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
             if force_delete is False:
                 skip_deletion = True
                 logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
-        else:
-            skip_deletion = False
+            else:
+                skip_deletion = False
 
         for ndx, item in enumerate(to_remove_issues, 1):
             item = item.split('_')
