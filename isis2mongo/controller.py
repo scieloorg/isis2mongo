@@ -241,18 +241,6 @@ class DataBroker(object):
                 # Ignore bulk erros, the errors are mainly related to legacy issues like duplicated keys in the legacy databases.
                 pass
 
-        # certifying it will be removed garbage collected
-        if 'articles' in bulk:
-            del(bulk['articles'])
-        if 'references' in bulk:
-            del(bulk['references'])
-        if 'journals' in bulk:
-            del(bulk['journals'])
-        if 'issues' in bulk:
-            del(bulk['issues'])
-
-        del(bulk)
-
     def write_record(self, database_collection, record):
 
         fltr = {
