@@ -232,14 +232,26 @@ class DataBroker(object):
         except:
             logger.error('Fail to update field %s' % str([collection, document_id, field, value]))
 
-    def bulk_data(self, data):
+    def bulk_data(self, bulk):
 
-        for collection, records in data.items():
+        for collection, records in bulk.items():
             try:
                 self.mongodb[collection].insert_many(records, ordered=False)
             except errors.BulkWriteError as e:
                 # Ignore bulk erros, the errors are mainly related to legacy issues like duplicated keys in the legacy databases.
                 pass
+
+        # certifying it will be removed garbage collected
+        if 'articles' in bulk:
+            del(bulk['articles'])
+        if 'references' in bulk:
+            del(bulk['references'])
+        if 'journals' in bulk:
+            del(bulk['journals'])
+        if 'issues' in bulk:
+            del(bulk['issues'])
+
+        del(bulk)
 
     def write_record(self, database_collection, record):
 
