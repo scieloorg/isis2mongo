@@ -303,6 +303,11 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
             if bulk_count == bulk_size:
                 bulk_count = 0
                 ctrl.bulk_data(dict(bulk))
+                del(bulk['articles'])
+                del(bulk['references'])
+                del(bulk['journals'])
+                del(bulk['issues'])
+                del(bulk)
                 bulk = {}
 
             # ctrl.write_record(coll, record)
