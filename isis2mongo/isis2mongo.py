@@ -319,6 +319,11 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                 ])
         # bulk residual data
         ctrl.bulk_data(dict(bulk))
+        del(bulk['articles'])
+        del(bulk['references'])
+        del(bulk['journals'])
+        del(bulk['issues'])
+        del(bulk)
 
         logger.info('Updating fields metadata')
         ctrl.bulk_update_field('issues', fields_to_update_after_loading_documents)
@@ -326,6 +331,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         legacy_documents = set(ctrl.articles_ids)
         legacy_issues = set(ctrl.issues_ids)
         legacy_journals = set(ctrl.journals_ids)
+        del(fields_to_update_after_loading_documents)
 
         logger.info('Producing lists of differences between ArticleMeta and Legacy databases')
         new_documents = list(legacy_documents - articlemeta_documents)
