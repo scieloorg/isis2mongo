@@ -217,13 +217,14 @@ class DataBroker(object):
         bk_updates = [UpdateOne({'code': document_id}, {'$set': {field: value}}, upsert=False) 
                 for _, document_id, field, value in updates]
         logger.info('bulk updating %s fields in the %s collection',
-                len(bk_updated), collection)
+                len(bk_updates), collection)
 
         try:
             self.mongodb[collection].bulk_write(bk_updates, ordered=False)
         except errors.BulkWriteError as e:
             # Ignore bulk erros, the errors are mainly related to legacy issues like duplicated keys in the legacy databases.
-            pass
+            logger.info('cannot bulk_write to mongodb: %s', e.details)
+            logger.exception(e)
 
     def update_field(self, collection, document_id, field, value):
         try:
