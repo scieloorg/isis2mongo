@@ -214,11 +214,10 @@ class DataBroker(object):
         return metadata
 
     def bulk_update_field(self, collection, updates):
-        bk_updates = []
-        for collection, document_id, field, value in updates:
-            bk_updates.append(
-                UpdateOne({'code': document_id}, {'$set': {field: value}}, upsert=False)
-            )
+        bk_updates = [UpdateOne({'code': document_id}, {'$set': {field: value}}, upsert=False) 
+                for _, document_id, field, value in updates]
+        logger.info('bulk updating %s fields in the %s collection',
+                len(bk_updated), collection)
 
         try:
             self.mongodb[collection].bulk_write(bk_updates, ordered=False)
