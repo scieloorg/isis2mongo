@@ -79,6 +79,7 @@ if SENTRY_HANDLER:
 
 
 REGEX_FIXISSUEID = re.compile(r'^[0-9]*')
+PICKLE_FILENAMES = []
 
 
 def issue_pid(record):
@@ -234,6 +235,7 @@ def get_pickled_result(pickle_name):
 
 
 def pickle_result(result, pickle_name):
+    PICKLE_FILENAMES.append(pickle_name)
     with open(pickle_name, 'wb') as file:
         pickle.dump(result, file)
 
@@ -241,7 +243,7 @@ def pickle_result(result, pickle_name):
 def cached(func):
     def _func(*args, **kwargs):
         pickle_name = hashlib.md5(
-                str(func.__name__, args, tuple(kwargs.items()))).hexdigest()
+                str((func.__name__, args, tuple(kwargs.items())))).hexdigest()
         result = get_pickled_result(pickle_name)
         if result is None:
             result = func(*args, **kwargs)
@@ -605,6 +607,16 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
     logger.info('Process Isis2mongo Finished')
 
 
+def cleanup():
+    for pickle_filename in PICKLE_FILENAMES:
+        try:
+            os.remove(pickle_filename)
+        except OSError as exc:
+            logger.info('could not remove file %s: %s', pickle_filename, exc)
+        else:
+            logger.info('cache file sucessfully removed "%s"', pickle_filename)
+
+
 def main():
     parser = argparse.ArgumentParser(
         description='Dump accesses'
@@ -665,3 +677,5 @@ def main():
     logging.config.dictConfig(LOGGING)
 
     run(args.collection, args.issns, args.full_rebuild, args.force_delete, args.bulk_size)
+    cleanup()
+
