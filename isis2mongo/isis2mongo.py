@@ -277,17 +277,18 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
     logger.debug('Admin Token: %s', ADMINTOKEN)
     logger.info('Loading ArticleMeta identifiers for collection: %s', collection)
 
-    articlemeta_documents = set(
-        load_articlemeta_documents_ids(collection, issns))
-    articlemeta_issues = set(
-        load_articlemeta_issues_ids(collection, issns))
-    articlemeta_journals = set(
-        load_articlemeta_journals_ids(collection, issns))
-
     if full_rebuild is True:
         articlemeta_documents = set([])
         articlemeta_issues = set([])
         articlemeta_journals = set([])
+
+    else:
+        articlemeta_documents = set(
+            load_articlemeta_documents_ids(collection, issns))
+        articlemeta_issues = set(
+            load_articlemeta_issues_ids(collection, issns))
+        articlemeta_journals = set(
+            load_articlemeta_journals_ids(collection, issns))
 
     with DataBroker(uuid.uuid4()) as ctrl:
         update_issue_id = ''
