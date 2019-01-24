@@ -9,6 +9,11 @@ from datetime import datetime
 import uuid
 import json
 import re
+import hashlib
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 
 from articlemeta.client import ThriftClient
 from articlemeta.client import UnauthorizedAccess
@@ -220,6 +225,32 @@ def load_isis_records(collection, issns=None):
             yield (rec_coll, record)
 
 
+def get_pickled_result(pickle_name):
+    try:
+        with open(pickle_name, 'rb') as file:
+            return pickle.load(file)
+    except IOError:
+        return None
+
+
+def pickle_result(result, pickle_name):
+    with open(pickle_name, 'wb') as file:
+        pickle.dump(result, file)
+
+
+def cached(func):
+    def _func(*args, **kwargs):
+        pickle_name = hashlib.md5(
+                str(func.__name__, args, tuple(kwargs.items()))).hexdigest()
+        result = get_pickled_result(pickle_name)
+        if result is None:
+            result = func(*args, **kwargs)
+            pickle_result(result, pickle_name)
+        return result 
+    return _func
+
+
+@cached
 def load_articlemeta_issues_ids(collection, issns=None):
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
@@ -236,6 +267,7 @@ def load_articlemeta_issues_ids(collection, issns=None):
     return issues_pids
 
 
+@cached
 def load_articlemeta_documents_ids(collection, issns=None):
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
@@ -252,6 +284,7 @@ def load_articlemeta_documents_ids(collection, issns=None):
     return documents_pids
 
 
+@cached
 def load_articlemeta_journals_ids(collection, issns=None):
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
