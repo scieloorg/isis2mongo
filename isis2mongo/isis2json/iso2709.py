@@ -19,8 +19,8 @@
 # along with this program. If not, see <http://www.gnu.org/licenses/>.
 from struct import unpack
 
-CR =  '\x0D' # \r
-LF =  '\x0A' # \n
+CR =  b'\x0D' # \r
+LF =  b'\x0A' # \n
 IS1 = '\x1F' # ECMA-48 Unit Separator
 IS2 = '\x1E' # ECMA-48 Record Separator / ISO-2709 field separator
 IS3 = '\x1D' # ECMA-48 Group Separator / ISO-2709 record separator
@@ -58,14 +58,18 @@ class IsoFile(object):
             chunk = self.file.read(size-count)
             if len(chunk) == 0:
                 break
-            chunk = chunk.replace(CR+LF, '')
+            chunk = chunk.replace(CR+LF, b'')
             if CR in chunk:
-                chunk = chunk.replace(CR, '')
+                chunk = chunk.replace(CR, b'')
             if LF in chunk:
-                chunk = chunk.replace(LF, '')
+                chunk = chunk.replace(LF, b'')
             count += len(chunk)
             chunks.append(chunk)
-        return ''.join(chunks)
+
+        try:
+            return ''.join([chunk.decode("utf8") for chunk in chunks]).encode("utf8")
+        except UnicodeDecodeError:
+            return ''.join([chunk.decode("ISO8859") for chunk in chunks]).encode("ISO8859")
 
     def close(self):
         self.file.close()

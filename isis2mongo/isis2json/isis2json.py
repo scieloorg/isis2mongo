@@ -87,8 +87,8 @@ def iterMstRecords(master_file_name, isis_json_type):
 
 
 def iterIsoRecords(iso_file_name, isis_json_type):
-    from iso2709 import IsoFile
-    from subfield import expand
+    from .iso2709 import IsoFile
+    from .subfield import expand
 
     iso = IsoFile(iso_file_name)
     for record in iso:
