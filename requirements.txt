@@ -1,0 +1,17 @@
+articlemetaapi==1.6.15
+backports.ssl-match-hostname==3.4.0.2
+chardet==2.2.1
+iniparse==0.4
+kitchen==1.1.1
+ply==3.9
+pycurl==7.19.0
+pygobject==3.22.0
+pygpgme==0.3
+pyliblzma==0.5.3
+pymongo==3.4.0
+pyxattr==0.5.1
+requests==2.11.1
+thriftpy==0.3.1
+urlgrabber==3.10
+xylose==1.16.5
+yum-metadata-parser==1.1.4
