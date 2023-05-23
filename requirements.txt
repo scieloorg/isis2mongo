@@ -10,7 +10,7 @@ pygpgme==0.3
 pyliblzma==0.5.3
 pymongo==3.4.0
 pyxattr==0.5.1
-requests==2.11.1
+requests==2.31.0
 thriftpy==0.3.1
 urlgrabber==3.10
 xylose==1.16.5
