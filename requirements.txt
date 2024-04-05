@@ -8,7 +8,7 @@ pycurl==7.19.0
 pygobject==3.22.0
 pygpgme==0.3
 pyliblzma==0.5.3
-pymongo==3.4.0
+pymongo==4.6.3
 pyxattr==0.5.1
 requests==2.11.1
 thriftpy==0.3.1
