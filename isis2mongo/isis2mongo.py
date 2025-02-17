@@ -26,9 +26,9 @@ DATABASES = (
     ('bib4cit', 'references'),
 )
 BULK_SIZE = 100000
-SECURE_ARTICLE_DELETIONS_NUMBER = 2000
-SECURE_ISSUE_DELETIONS_NUMBER = 20
-SECURE_JOURNAL_DELETIONS_NUMBER = 5
+SECURE_ARTICLE_DELETIONS_NUMBER = int(os.environ.get('SECURE_ARTICLE_DELETIONS_NUMBER') or 50)
+SECURE_ISSUE_DELETIONS_NUMBER = int(os.environ.get('SECURE_ISSUE_DELETIONS_NUMBER') or 2)
+SECURE_JOURNAL_DELETIONS_NUMBER = int(os.environ.get('SECURE_JOURNAL_DELETIONS_NUMBER') or 2)
 ADMINTOKEN = os.environ.get('ARTICLEMETA_ADMINTOKEN', 'admin')
 ARTICLEMETA_THRIFTSERVER = os.environ.get('ARTICLEMETA_THRIFTSERVER', 'admin')
 ISO_PATH = os.environ.get('ISO_PATH', os.path.dirname(os.path.abspath(__file__)))
@@ -76,6 +76,157 @@ if SENTRY_HANDLER:
 REGEX_FIXISSUEID = re.compile(r'^[0-9]*')
 
 
+class IssuePidError(Exception):
+    pass
+
+def get_field_value(record, field_key, default=None):
+    try:
+        return record[field_key][0]['_']
+    except (IndexError, KeyError, TypeError):
+        return default
+
+
+def log_numbers(name, am_items, legacy_items, legacy_database_name, new_items, to_remove_items):
+    # log_numbers("documents", articlemeta_documents, legacy_documents, ctrl.database_name, new_documents, to_remove_documents)
+    logger.info("articlemeta_%s = conjunto vazio ou status antes de processar", name)
+    logger.info("legacy_%s = base de dados temporaria com items a inserir", name)
+    logger.info("articlemeta_%s (thrift ou conjunto vazio): %s", name, len(am_items))
+    logger.info("legacy_%s (%s): %s", name, legacy_database_name, len(legacy_items))
+    logger.info("new_%s (legacy_%s menos articlemeta_%s): %s", name, name, name, len(new_items))
+    logger.info("to_remove_%s (articlemeta_%s menos legacy_%s): %s", name, name, name, len(to_remove_items))
+
+
+def delele_items_incorrect(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, rc_delete):
+    # parece incorreto porque apagar os registros sempre
+    total_to_remove = len(to_remove_items)
+    logger.info(
+        '%ss to be removed from articlemeta (%d)',
+        name, total_to_remove
+    )
+    skip_deletion = True
+    if total_to_remove > SECURE_DELETIONS_NUMBER:
+        logger.info('To many %ss to be removed', name)
+        if force_delete is False:
+            skip_deletion = True
+            logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
+        else:
+            skip_deletion = False
+
+    for ndx, item in enumerate(to_remove_items, 1):
+        item = item.split('_')
+        if skip_deletion is True:
+            logger.debug(
+                '%s remove task (%d, %d) will be skipped (%s)',
+                name,
+                ndx,
+                total_to_remove,
+                '_'.join([item[0], item[1]])
+            )
+        try:
+            rc_delete(item[1], item[0])
+            logger.debug(
+                '%s (%d, %d) removed from Articlemeta (%s)',
+                name,
+                ndx,
+                total_to_remove,
+                '_'.join([item[0], item[1]])
+            )
+        except UnauthorizedAccess:
+            logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+
+
+def delele_items(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, rc_delete): 
+    total_to_remove = len(to_remove_items)
+    logger.info(
+        'Found %ss to be removed from articlemeta (%d)',
+        name, total_to_remove
+    )
+    logger.info(
+        '%ss SECURE_DELETIONS_NUMBER (%d)',
+        name, SECURE_DELETIONS_NUMBER
+    )
+    logger.info(
+        '%ss force_delete: (%s)',
+        name, force_delete
+    )
+
+    # o padrão é apagar
+    delete = True
+
+    # verifica cancela apagar
+    if total_to_remove > SECURE_DELETIONS_NUMBER:
+        # inseguro apagar
+        logger.info('ALERT: To many %ss to be removed. Force delete: %s', name, force_delete)
+        delete = force_delete
+
+    if not delete:
+        logger.info('Cancel to delete %ss', name)
+        return
+
+    logger.info(
+        'Removing %ss (%d)',
+        name, total_to_remove
+    )
+    for ndx, item in enumerate(to_remove_items, 1):
+        item = item.split('_')
+        try:
+            rc_delete(item[1], item[0])
+            logger.debug(
+                '%s (%d, %d) removed from Articlemeta (%s)',
+                name,
+                ndx,
+                total_to_remove,
+                '_'.join([item[0], item[1]])
+            )
+        except UnauthorizedAccess:
+            logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+
+
+def add_items(name, new_items, ctrl_load_item, rc_add_item): 
+    # Including and Updating ITEMs
+    logger.info(
+        '%ss being included into articlemeta (%d)',
+        name,
+        len(new_items)
+    )
+    for ndx, item in enumerate(new_items, 1):
+        item = item.split('_')
+        try:
+            item_data = ctrl_load_item(item[0], item[1])
+        except:
+            logger.error(
+                'Fail to load %s into Articlemeta (%s)',
+                name,
+                '_'.join([item[0], item[1]])
+            )
+            continue
+
+        if not item_data:
+            logger.error(
+                'Fail to load %s into Articlemeta (%s)',
+                name,
+                '_'.join([item[0], item[1]])
+            )
+            continue
+
+        try:
+            rc_add_items(json.dumps(item_data))
+        except ServerError:
+            logger.error(
+                'Fail to load %s into Articlemeta (%s)',
+                name,
+                '_'.join([item[0], item[1]])
+            )
+            continue
+
+        logger.debug(
+            '%s (%d, %d) loaded into Articlemeta (%s)',
+            name,
+            ndx, len(new_items),
+            '_'.join([item[0], item[1]])
+        )
+
+
 def issue_pid(record):
     """
     This method returns the ISSUE PID according to values registered in
@@ -92,18 +243,19 @@ def issue_pid(record):
     input: v35: 0032-281X v36: 2002
     output: 0032-281X20020000
     """
-
+    field_706 = get_field_value(record, 'v706')
+    if field_706 != "i":
+        return
     try:
         issn = record.get('v35', [{'_': None}])[0]['_']
         publication_year = record.get('v36', [{'_': None}])[0]['_'][0:4]
         issue_order = REGEX_FIXISSUEID.match(record.get('v36', [{'_': None}])[0]['_'][4:]).group() or 0
         order = "%04d" % int(issue_order)
-    except TypeError:
-        return None
-
-    pid = issn+publication_year+order
-
-    return pid
+        return issn+publication_year+order
+    except Exception as e:
+        raise IssuePidError(
+            "Unable to get issue pid from %s: %s %s" % (record, type(e), e)
+        )
 
 
 def load_isis_records(collection, issns=None):
@@ -150,14 +302,15 @@ def load_isis_records(collection, issns=None):
         rec_coll = coll
         logger.info('Recording (%s) records for collection (%s)', coll, collection)
         isofile = '%s/../isos/%s/%s.iso' % (ISO_PATH, collection, iso)
+        logger.info('Reading %s', isofile)
 
         try:
             isis_db = IsisDataBroker(isofile)
         except IOError:
             if iso in ['bib4cit', 'issue']:
-                logger.warning('No %s found, it will continue without this file. The references or issues must be in article database otherwise no references or issues will be recorded', iso)
+                logger.warning('Not found %s.iso for %s, so it is expected to get their records from artigo.iso', iso, collection)
                 continue
-            raise ValueError('ISO file do not exists for the collection (%s), check the collection acronym or the path to the ISO file (%s)' % (collection, isofile))
+            raise ValueError('Not found %s.iso for %s' % (iso, collection))
 
         temp_processing_date = [{'_': datetime.now().strftime("%Y%m%d")}]
 
@@ -277,17 +430,22 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
     logger.debug('Admin Token: %s', ADMINTOKEN)
     logger.info('Loading ArticleMeta identifiers for collection: %s', collection)
 
-    articlemeta_documents = set(
-        load_articlemeta_documents_ids(collection, issns))
-    articlemeta_issues = set(
-        load_articlemeta_issues_ids(collection, issns))
-    articlemeta_journals = set(
-        load_articlemeta_journals_ids(collection, issns))
-
     if full_rebuild is True:
         articlemeta_documents = set([])
         articlemeta_issues = set([])
         articlemeta_journals = set([])
+    else:
+        articlemeta_documents = set(
+            load_articlemeta_documents_ids(collection, issns))
+        articlemeta_issues = set(
+            load_articlemeta_issues_ids(collection, issns))
+        articlemeta_journals = set(
+            load_articlemeta_journals_ids(collection, issns))
+    
+    logger.info("full_rebuild=%s", full_rebuild)
+    logger.info("articlemeta_documents (thrift ou conjunto vazio): %s", len(articlemeta_documents))
+    logger.info("articlemeta_issues (thrift ou conjunto vazio): %s", len(articlemeta_issues))
+    logger.info("articlemeta_journals (thrift ou conjunto vazio): %s", len(articlemeta_journals))
 
     with DataBroker(uuid.uuid4()) as ctrl:
         update_issue_id = ''
@@ -296,11 +454,13 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         bulk = {}
 
         bulk_count = 0
+        # lê os registros de todas os isos disponíveis: title.iso, artigo.iso, ...
         for coll, record in load_isis_records(collection, issns):
             bulk_count += 1
             bulk.setdefault(coll, [])
             bulk[coll].append(record)
             if bulk_count == bulk_size:
+                logger.info("bulk_data: %s itens em %s", bulk_count, coll)
                 bulk_count = 0
                 ctrl.bulk_data(dict(bulk))
                 bulk = {}
@@ -318,6 +478,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                     record['v4'][0]['_']
                 ])
         # bulk residual data
+        logger.info("bulk_data: %s itens em %s", bulk_count, coll)
         ctrl.bulk_data(dict(bulk))
 
         logger.info('Updating fields metadata')
@@ -344,229 +505,28 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         lg_journals_pids_only = set([i[0:13] for i in legacy_journals])
         to_remove_journals = list(am_journals_pids_only - lg_journals_pids_only)
 
+        log_numbers("documents", articlemeta_documents, legacy_documents, ctrl.database_name, new_documents, to_remove_documents)
+        log_numbers("issues", articlemeta_issues, legacy_issues, ctrl.database_name, new_issues, to_remove_issues)
+        log_numbers("journals", articlemeta_journals, legacy_journals, ctrl.database_name, new_journals, to_remove_journals)
+
         # Removing Documents
-        total_to_remove_documents = len(to_remove_documents)
-        logger.info(
-            'Documents to be removed from articlemeta (%d)',
-            total_to_remove_documents
-        )
-
-        skip_deletion = True
-        if total_to_remove_documents > SECURE_ARTICLE_DELETIONS_NUMBER:
-            logger.info('To many documents to be removed')
-            if force_delete is False:
-                skip_deletion = True
-                logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
-            else:
-                skip_deletion = False
-
-        for ndx, item in enumerate(to_remove_documents, 1):
-            item = item.split('_')
-            if skip_deletion is True:
-                logger.debug(
-                    'Document remove task (%d, %d) will be skipped (%s)',
-                    ndx,
-                    total_to_remove_documents,
-                    '_'.join([item[0], item[1]])
-                )
-            try:
-                rc.delete_document(item[1], item[0])
-                logger.debug(
-                    'Document (%d, %d) removed from Articlemeta (%s)',
-                    ndx,
-                    total_to_remove_documents,
-                    '_'.join([item[0], item[1]])
-                )
-            except UnauthorizedAccess:
-                logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+        delele_items("document", to_remove_documents, SECURE_ARTICLE_DELETIONS_NUMBER, force_delete, rc.delete_document)
 
         # Including and Updating Documents
-        logger.info(
-            'Documents being included into articlemeta (%d)',
-            len(new_documents)
-        )
-        for ndx, item in enumerate(new_documents, 1):
-            item = item.split('_')
-            try:
-                document_meta = ctrl.load_document(item[0], item[1])
-            except:
-                logger.error(
-                    'Fail to load document into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            if not document_meta:
-                logger.error(
-                    'Fail to load document into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            try:
-                rc.add_document(json.dumps(document_meta))
-            except ServerError:
-                logger.error(
-                    'Fail to load document into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            logger.debug(
-                'Document (%d, %d) loaded into Articlemeta (%s)',
-                ndx, len(new_documents),
-                '_'.join([item[0], item[1]])
-            )
+        add_items("document", new_documents, ctrl.load_document, rc.add_document)
 
         # Removing Journals
-        total_to_remove_journals = len(to_remove_journals)
-        logger.info(
-            'Journals to be removed from articlemeta (%d)',
-            total_to_remove_journals
-        )
-
-        skip_deletion = True
-        if total_to_remove_journals > SECURE_JOURNAL_DELETIONS_NUMBER:
-            logger.info('To many journals to be removed')
-            if force_delete is False:
-                skip_deletion = True
-                logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
-            else:
-                skip_deletion = False
-
-        for ndx, item in enumerate(to_remove_journals, 1):
-            item = item.split('_')
-            if skip_deletion is True:
-                logger.debug(
-                    'Journal remove task (%d, %d) will be skipped (%s)',
-                    ndx,
-                    total_to_remove_journals,
-                    '_'.join([item[0], item[1]])
-                )
-            try:
-                rc.delete_journal(item[1], item[0])
-                logger.debug(
-                    'Journal (%d, %d) removed from Articlemeta (%s)',
-                    ndx,
-                    total_to_remove_journals,
-                    '_'.join([item[0], item[1]])
-                )
-            except UnauthorizedAccess:
-                logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+        delele_items("journal", to_remove_journals, SECURE_JOURNAL_DELETIONS_NUMBER, force_delete, rc.delete_journal)
 
         # Including and Updating Journals
-        logger.info(
-            'Journals being included into articlemeta (%d)',
-            len(new_journals)
-        )
-        for ndx, item in enumerate(new_journals, 1):
-            item = item.split('_')
-            try:
-                journal_meta = ctrl.load_journal(item[0], item[1])
-            except:
-                logger.error(
-                    'Fail to load journal into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-            if not journal_meta:
-                logger.error(
-                    'Fail to load journal into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            try:
-                rc.add_journal(json.dumps(journal_meta))
-            except ServerError:
-                logger.error(
-                    'Fail to load journal into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            logger.debug(
-                'Journal (%d, %d) loaded into Articlemeta (%s)',
-                ndx,
-                len(new_journals),
-                '_'.join([item[0], item[1]])
-            )
+        add_items("journal", new_journals, ctrl.load_journal, rc.add_journal)
 
         # Removing Issues
-        total_to_remove_issues = len(to_remove_issues)
-        logger.info(
-            'Issues to be removed from articlemeta (%d)',
-            total_to_remove_issues
-        )
-
-        skip_deletion = True
-        if total_to_remove_issues > SECURE_ISSUE_DELETIONS_NUMBER:
-            logger.info('To many issues to be removed')
-            if force_delete is False:
-                skip_deletion = True
-                logger.info('force_delete is setup to %s, the remove task will be skipped', force_delete)
-            else:
-                skip_deletion = False
-
-        for ndx, item in enumerate(to_remove_issues, 1):
-            item = item.split('_')
-            if skip_deletion is True:
-                logger.debug(
-                    'Issue remove task (%d, %d) will be skipped (%s)',
-                    ndx,
-                    total_to_remove_issues,
-                    '_'.join([item[0], item[1]])
-                )
-            try:
-                rc.delete_issue(item[1], item[0])
-                logger.debug(
-                    'Issue (%d, %d) removed from Articlemeta (%s)',
-                    ndx,
-                    total_to_remove_issues,
-                    '_'.join([item[0], item[1]])
-                )
-            except UnauthorizedAccess:
-                logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+        delele_items("issue", to_remove_issues, SECURE_ISSUE_DELETIONS_NUMBER, force_delete, rc.delete_issue)
 
         # Including and Updating Issues
-        logger.info(
-            'Issues being included into articlemeta (%d)',
-            len(new_issues)
-        )
-        for ndx, item in enumerate(new_issues, 1):
-            item = item.split('_')
+        add_items("issue", new_issues, ctrl.load_issue, rc.add_issue)
 
-            try:
-                issue_meta = ctrl.load_issue(item[0], item[1])
-            except:
-                logger.error(
-                    'Fail to load issue into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            if not issue_meta:
-                logger.error(
-                    'Fail to load issue into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            try:
-                rc.add_issue(json.dumps(issue_meta))
-            except ServerError:
-                logger.error(
-                    'Fail to load issue into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            logger.debug(
-                'Issue (%d, %d) loaded into Articlemeta (%s)',
-                ndx,
-                len(new_issues),
-                '_'.join([item[0], item[1]])
-            )
 
     logger.info('Process Isis2mongo Finished')
 
