@@ -76,6 +76,16 @@ if SENTRY_HANDLER:
 REGEX_FIXISSUEID = re.compile(r'^[0-9]*')
 
 
+class IssuePidError(Exception):
+    pass
+
+def get_field_value(record, field_key, default=None):
+    try:
+        return record[field_key][0]['_']
+    except (IndexError, KeyError, TypeError):
+        return default
+
+
 def issue_pid(record):
     """
     This method returns the ISSUE PID according to values registered in
@@ -92,18 +102,19 @@ def issue_pid(record):
     input: v35: 0032-281X v36: 2002
     output: 0032-281X20020000
     """
-
+    field_706 = get_field_value(record, 'v706')
+    if field_706 != "i":
+        return
     try:
         issn = record.get('v35', [{'_': None}])[0]['_']
         publication_year = record.get('v36', [{'_': None}])[0]['_'][0:4]
         issue_order = REGEX_FIXISSUEID.match(record.get('v36', [{'_': None}])[0]['_'][4:]).group() or 0
         order = "%04d" % int(issue_order)
-    except TypeError:
-        return None
-
-    pid = issn+publication_year+order
-
-    return pid
+        return issn+publication_year+order
+    except Exception as e:
+        raise IssuePidError(
+            "Unable to get issue pid from %s: %s %s" % (record, type(e), e)
+        )
 
 
 def load_isis_records(collection, issns=None):
