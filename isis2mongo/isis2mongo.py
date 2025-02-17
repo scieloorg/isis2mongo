@@ -86,6 +86,16 @@ def get_field_value(record, field_key, default=None):
         return default
 
 
+def log_numbers(name, am_items, legacy_items, legacy_database_name, new_items, to_remove_items):
+    # log_numbers("documents", articlemeta_documents, legacy_documents, ctrl.database_name, new_documents, to_remove_documents)
+    logger.info("articlemeta_%s = conjunto vazio ou status antes de processar", name)
+    logger.info("legacy_%s = base de dados temporaria com items a inserir", name)
+    logger.info("articlemeta_%s (thrift ou conjunto vazio): %s", name, len(am_items))
+    logger.info("legacy_%s (%s): %s", name, legacy_database_name, len(legacy_items))
+    logger.info("new_%s (legacy_%s menos articlemeta_%s): %s", name, name, name, len(new_items))
+    logger.info("to_remove_%s (articlemeta_%s menos legacy_%s): %s", name, name, name, len(to_remove_items))
+
+
 def issue_pid(record):
     """
     This method returns the ISSUE PID according to values registered in
@@ -161,6 +171,7 @@ def load_isis_records(collection, issns=None):
         rec_coll = coll
         logger.info('Recording (%s) records for collection (%s)', coll, collection)
         isofile = '%s/../isos/%s/%s.iso' % (ISO_PATH, collection, iso)
+        logger.info('Reading %s', isofile)
 
         try:
             isis_db = IsisDataBroker(isofile)
@@ -168,7 +179,7 @@ def load_isis_records(collection, issns=None):
             if iso in ['bib4cit', 'issue']:
                 logger.warning('Not found %s.iso for %s, so it is expected to get their records from artigo.iso', iso, collection)
                 continue
-            raise ValueError('Not found %s.iso for %s', iso, collection)
+            raise ValueError('Not found %s.iso for %s' % (iso, collection))
 
         temp_processing_date = [{'_': datetime.now().strftime("%Y%m%d")}]
 
@@ -299,6 +310,11 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
             load_articlemeta_issues_ids(collection, issns))
         articlemeta_journals = set(
             load_articlemeta_journals_ids(collection, issns))
+    
+    logger.info("full_rebuild=%s", full_rebuild)
+    logger.info("articlemeta_documents (thrift ou conjunto vazio): %s", len(articlemeta_documents))
+    logger.info("articlemeta_issues (thrift ou conjunto vazio): %s", len(articlemeta_issues))
+    logger.info("articlemeta_journals (thrift ou conjunto vazio): %s", len(articlemeta_journals))
 
     with DataBroker(uuid.uuid4()) as ctrl:
         update_issue_id = ''
@@ -307,11 +323,13 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         bulk = {}
 
         bulk_count = 0
+        # lê os registros de todas os isos disponíveis: title.iso, artigo.iso, ...
         for coll, record in load_isis_records(collection, issns):
             bulk_count += 1
             bulk.setdefault(coll, [])
             bulk[coll].append(record)
             if bulk_count == bulk_size:
+                logger.info("bulk_data: %s itens em %s", bulk_count, coll)
                 bulk_count = 0
                 ctrl.bulk_data(dict(bulk))
                 bulk = {}
@@ -329,6 +347,7 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                     record['v4'][0]['_']
                 ])
         # bulk residual data
+        logger.info("bulk_data: %s itens em %s", bulk_count, coll)
         ctrl.bulk_data(dict(bulk))
 
         logger.info('Updating fields metadata')
@@ -355,13 +374,16 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         lg_journals_pids_only = set([i[0:13] for i in legacy_journals])
         to_remove_journals = list(am_journals_pids_only - lg_journals_pids_only)
 
+        log_numbers("documents", articlemeta_documents, legacy_documents, ctrl.database_name, new_documents, to_remove_documents)
+        log_numbers("issues", articlemeta_issues, legacy_issues, ctrl.database_name, new_issues, to_remove_issues)
+        log_numbers("journals", articlemeta_journals, legacy_journals, ctrl.database_name, new_journals, to_remove_journals)
+
         # Removing Documents
         total_to_remove_documents = len(to_remove_documents)
         logger.info(
             'Documents to be removed from articlemeta (%d)',
             total_to_remove_documents
         )
-
         skip_deletion = True
         if total_to_remove_documents > SECURE_ARTICLE_DELETIONS_NUMBER:
             logger.info('To many documents to be removed')
