@@ -134,6 +134,51 @@ def delele_items(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, r
             logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
 
 
+def add_items(name, new_items, ctrl_load_item, rc_add_item): 
+    # Including and Updating ITEMs
+    logger.info(
+        '%ss being included into articlemeta (%d)',
+        name,
+        len(new_items)
+    )
+    for ndx, item in enumerate(new_items, 1):
+        item = item.split('_')
+        try:
+            item_data = ctrl_load_item(item[0], item[1])
+        except:
+            logger.error(
+                'Fail to load %s into Articlemeta (%s)',
+                name,
+                '_'.join([item[0], item[1]])
+            )
+            continue
+
+        if not item_data:
+            logger.error(
+                'Fail to load %s into Articlemeta (%s)',
+                name,
+                '_'.join([item[0], item[1]])
+            )
+            continue
+
+        try:
+            rc_add_items(json.dumps(item_data))
+        except ServerError:
+            logger.error(
+                'Fail to load %s into Articlemeta (%s)',
+                name,
+                '_'.join([item[0], item[1]])
+            )
+            continue
+
+        logger.debug(
+            '%s (%d, %d) loaded into Articlemeta (%s)',
+            name,
+            ndx, len(new_items),
+            '_'.join([item[0], item[1]])
+        )
+
+
 def issue_pid(record):
     """
     This method returns the ISSUE PID according to values registered in
@@ -420,126 +465,20 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         delele_items("document", to_remove_documents, SECURE_ARTICLE_DELETIONS_NUMBER, force_delete, rc.delete_document)
 
         # Including and Updating Documents
-        logger.info(
-            'Documents being included into articlemeta (%d)',
-            len(new_documents)
-        )
-        for ndx, item in enumerate(new_documents, 1):
-            item = item.split('_')
-            try:
-                document_meta = ctrl.load_document(item[0], item[1])
-            except:
-                logger.error(
-                    'Fail to load document into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            if not document_meta:
-                logger.error(
-                    'Fail to load document into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            try:
-                rc.add_document(json.dumps(document_meta))
-            except ServerError:
-                logger.error(
-                    'Fail to load document into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            logger.debug(
-                'Document (%d, %d) loaded into Articlemeta (%s)',
-                ndx, len(new_documents),
-                '_'.join([item[0], item[1]])
-            )
+        add_items("document", new_documents, ctrl.load_document, rc.add_document)
 
         # Removing Journals
         delele_items("journal", to_remove_journals, SECURE_JOURNAL_DELETIONS_NUMBER, force_delete, rc.delete_journal)
 
         # Including and Updating Journals
-        logger.info(
-            'Journals being included into articlemeta (%d)',
-            len(new_journals)
-        )
-        for ndx, item in enumerate(new_journals, 1):
-            item = item.split('_')
-            try:
-                journal_meta = ctrl.load_journal(item[0], item[1])
-            except:
-                logger.error(
-                    'Fail to load journal into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-            if not journal_meta:
-                logger.error(
-                    'Fail to load journal into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            try:
-                rc.add_journal(json.dumps(journal_meta))
-            except ServerError:
-                logger.error(
-                    'Fail to load journal into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            logger.debug(
-                'Journal (%d, %d) loaded into Articlemeta (%s)',
-                ndx,
-                len(new_journals),
-                '_'.join([item[0], item[1]])
-            )
+        add_items("journal", new_journals, ctrl.load_journal, rc.add_journal)
 
         # Removing Issues
         delele_items("issue", to_remove_issues, SECURE_ISSUE_DELETIONS_NUMBER, force_delete, rc.delete_issue)
 
         # Including and Updating Issues
-        logger.info(
-            'Issues being included into articlemeta (%d)',
-            len(new_issues)
-        )
-        for ndx, item in enumerate(new_issues, 1):
-            item = item.split('_')
+        add_items("issue", new_issues, ctrl.load_issue, rc.add_issue)
 
-            try:
-                issue_meta = ctrl.load_issue(item[0], item[1])
-            except:
-                logger.error(
-                    'Fail to load issue into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            if not issue_meta:
-                logger.error(
-                    'Fail to load issue into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            try:
-                rc.add_issue(json.dumps(issue_meta))
-            except ServerError:
-                logger.error(
-                    'Fail to load issue into Articlemeta (%s)',
-                    '_'.join([item[0], item[1]])
-                )
-                continue
-
-            logger.debug(
-                'Issue (%d, %d) loaded into Articlemeta (%s)',
-                ndx,
-                len(new_issues),
-                '_'.join([item[0], item[1]])
-            )
 
     logger.info('Process Isis2mongo Finished')
 
