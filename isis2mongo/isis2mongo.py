@@ -166,9 +166,9 @@ def load_isis_records(collection, issns=None):
             isis_db = IsisDataBroker(isofile)
         except IOError:
             if iso in ['bib4cit', 'issue']:
-                logger.warning('No %s found, it will continue without this file. The references or issues must be in article database otherwise no references or issues will be recorded', iso)
+                logger.warning('Not found %s.iso for %s, so it is expected to get their records from artigo.iso', iso, collection)
                 continue
-            raise ValueError('ISO file do not exists for the collection (%s), check the collection acronym or the path to the ISO file (%s)' % (collection, isofile))
+            raise ValueError('Not found %s.iso for %s', iso, collection)
 
         temp_processing_date = [{'_': datetime.now().strftime("%Y%m%d")}]
 
@@ -288,17 +288,17 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
     logger.debug('Admin Token: %s', ADMINTOKEN)
     logger.info('Loading ArticleMeta identifiers for collection: %s', collection)
 
-    articlemeta_documents = set(
-        load_articlemeta_documents_ids(collection, issns))
-    articlemeta_issues = set(
-        load_articlemeta_issues_ids(collection, issns))
-    articlemeta_journals = set(
-        load_articlemeta_journals_ids(collection, issns))
-
     if full_rebuild is True:
         articlemeta_documents = set([])
         articlemeta_issues = set([])
         articlemeta_journals = set([])
+    else:
+        articlemeta_documents = set(
+            load_articlemeta_documents_ids(collection, issns))
+        articlemeta_issues = set(
+            load_articlemeta_issues_ids(collection, issns))
+        articlemeta_journals = set(
+            load_articlemeta_journals_ids(collection, issns))
 
     with DataBroker(uuid.uuid4()) as ctrl:
         update_issue_id = ''
