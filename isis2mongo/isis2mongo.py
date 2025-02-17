@@ -96,7 +96,8 @@ def log_numbers(name, am_items, legacy_items, legacy_database_name, new_items, t
     logger.info("to_remove_%s (articlemeta_%s menos legacy_%s): %s", name, name, name, len(to_remove_items))
 
 
-def delele_items(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, rc_delete): 
+def delele_items_incorrect(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, rc_delete):
+    # parece incorreto porque apagar os registros sempre
     total_to_remove = len(to_remove_items)
     logger.info(
         '%ss to be removed from articlemeta (%d)',
@@ -121,6 +122,53 @@ def delele_items(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, r
                 total_to_remove,
                 '_'.join([item[0], item[1]])
             )
+        try:
+            rc_delete(item[1], item[0])
+            logger.debug(
+                '%s (%d, %d) removed from Articlemeta (%s)',
+                name,
+                ndx,
+                total_to_remove,
+                '_'.join([item[0], item[1]])
+            )
+        except UnauthorizedAccess:
+            logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+
+
+def delele_items(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, rc_delete): 
+    total_to_remove = len(to_remove_items)
+    logger.info(
+        'Found %ss to be removed from articlemeta (%d)',
+        name, total_to_remove
+    )
+    logger.info(
+        '%ss SECURE_DELETIONS_NUMBER (%d)',
+        name, SECURE_DELETIONS_NUMBER
+    )
+    logger.info(
+        '%ss force_delete: (%s)',
+        name, force_delete
+    )
+
+    # o padrão é apagar
+    delete = True
+
+    # verifica cancela apagar
+    if total_to_remove > SECURE_DELETIONS_NUMBER:
+        # inseguro apagar
+        logger.info('ALERT: To many %ss to be removed. Force delete: %s', name, force_delete)
+        delete = force_delete
+
+    if not delete:
+        logger.info('Cancel to delete %ss', name)
+        return
+
+    logger.info(
+        'Removing %ss (%d)',
+        name, total_to_remove
+    )
+    for ndx, item in enumerate(to_remove_items, 1):
+        item = item.split('_')
         try:
             rc_delete(item[1], item[0])
             logger.debug(
