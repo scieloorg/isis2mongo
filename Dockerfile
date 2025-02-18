@@ -11,7 +11,8 @@ RUN sed -i 's/mirrorlist/#mirrorlist/g' /etc/yum.repos.d/CentOS-* && \
 
 # Copiar y configurar la aplicación
 COPY . /app
-RUN pip install -r /app/requirements.txt && \
+RUN python -m pip install --upgrade pip
+RUN python -m pip install -r /app/requirements.txt && \
     chmod -R 755 /app/* && \
     python setup.py install
 
