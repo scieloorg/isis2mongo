@@ -210,7 +210,7 @@ def add_items(name, new_items, ctrl_load_item, rc_add_item):
             continue
 
         try:
-            rc_add_items(json.dumps(item_data))
+            rc_add_item(json.dumps(item_data))
         except ServerError:
             logger.error(
                 'Fail to load %s into Articlemeta (%s)',
