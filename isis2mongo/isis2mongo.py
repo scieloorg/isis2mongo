@@ -88,12 +88,12 @@ def get_field_value(record, field_key, default=None):
 
 def log_numbers(name, am_items, legacy_items, legacy_database_name, new_items, to_remove_items):
     # log_numbers("documents", articlemeta_documents, legacy_documents, ctrl.database_name, new_documents, to_remove_documents)
-    logger.info("articlemeta_%s = conjunto vazio ou status antes de processar", name)
-    logger.info("legacy_%s = base de dados temporaria com items a inserir", name)
-    logger.info("articlemeta_%s (thrift ou conjunto vazio): %s", name, len(am_items))
-    logger.info("legacy_%s (%s): %s", name, legacy_database_name, len(legacy_items))
-    logger.info("new_%s (legacy_%s menos articlemeta_%s): %s", name, name, name, len(new_items))
-    logger.info("to_remove_%s (articlemeta_%s menos legacy_%s): %s", name, name, name, len(to_remove_items))
+    logger.info("%s - %s - articlemeta = conjunto vazio ou status antes de processar", name)
+    logger.info("%s - %s - legacy = base de dados temporaria com items a inserir", name)
+    logger.info("%s - %s - articlemeta (thrift ou conjunto vazio)", name, len(am_items))
+    logger.info("%s - %s - legacy (%s)", name, len(legacy_items), legacy_database_name)
+    logger.info("%s - %s - new (legacy menos articlemeta)", name, len(new_items))
+    logger.info("%s - %s - to_remove (articlemeta menos legacy)", name, len(to_remove_items))
 
 
 def delele_items_incorrect(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, rc_delete):
@@ -210,7 +210,7 @@ def add_items(name, new_items, ctrl_load_item, rc_add_item):
             continue
 
         try:
-            rc_add_items(json.dumps(item_data))
+            rc_add_item(json.dumps(item_data))
         except ServerError:
             logger.error(
                 'Fail to load %s into Articlemeta (%s)',
@@ -454,13 +454,17 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         bulk = {}
 
         bulk_count = 0
+        total_bulked = 0
+        times = 1
         # lê os registros de todas os isos disponíveis: title.iso, artigo.iso, ...
         for coll, record in load_isis_records(collection, issns):
             bulk_count += 1
             bulk.setdefault(coll, [])
             bulk[coll].append(record)
             if bulk_count == bulk_size:
-                logger.info("bulk_data: %s itens em %s", bulk_count, coll)
+                total_bulked += bulk_count
+                logger.info("bulk_data: %s: %s, lote %s", coll, bulk_count, times)
+                times += 1
                 bulk_count = 0
                 ctrl.bulk_data(dict(bulk))
                 bulk = {}
@@ -478,7 +482,9 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                     record['v4'][0]['_']
                 ])
         # bulk residual data
-        logger.info("bulk_data: %s itens em %s", bulk_count, coll)
+        total_bulked += bulk_count
+        logger.info("bulk_data: %s: %s, lote %s", coll, bulk_count, times)
+        logger.info("total_bulk_data: %s: %s", coll, total_bulked)
         ctrl.bulk_data(dict(bulk))
 
         logger.info('Updating fields metadata')
