@@ -88,8 +88,8 @@ def get_field_value(record, field_key, default=None):
 
 def log_numbers(name, am_items, legacy_items, legacy_database_name, new_items, to_remove_items):
     # log_numbers("documents", articlemeta_documents, legacy_documents, ctrl.database_name, new_documents, to_remove_documents)
-    logger.info("%s - %s - articlemeta = conjunto vazio ou status antes de processar", name)
-    logger.info("%s - %s - legacy = base de dados temporaria com items a inserir", name)
+    logger.info("%s - articlemeta = conjunto vazio ou status antes de processar", name)
+    logger.info("%s - legacy = base de dados temporaria com items a inserir", name)
     logger.info("%s - %s - articlemeta (thrift ou conjunto vazio)", name, len(am_items))
     logger.info("%s - %s - legacy (%s)", name, len(legacy_items), legacy_database_name)
     logger.info("%s - %s - new (legacy menos articlemeta)", name, len(new_items))
