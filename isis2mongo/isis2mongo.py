@@ -9,7 +9,6 @@ from datetime import datetime
 import uuid
 import json
 import re
-
 from articlemeta.client import ThriftClient
 from articlemeta.client import UnauthorizedAccess
 from articlemeta.client import ServerError
@@ -17,6 +16,14 @@ from articlemeta.client import ServerError
 from controller import DataBroker, IsisDataBroker
 
 logger = logging.getLogger(__name__)
+
+try:
+    import requests
+    REQUESTS_IMPORTED = True
+except ImportError:
+    logger.error("Erro import requests")
+    REQUESTS_IMPORTED = False
+    
 
 # Do not change this order
 DATABASES = (
@@ -86,6 +93,60 @@ def get_field_value(record, field_key, default=None):
         return default
 
 
+def get_am_total(resource_type, collection):
+    """
+    Obtém o total de registros da API do SciELO para um determinado tipo de recurso e coleção
+    
+    Args:
+        resource_type (str): Tipo de recurso ('issue', 'article' ou 'journal')
+        collection (str): Código da coleção (ex: 'scl' para Brasil)
+        limit (int): Limite de registros por página
+        
+    Returns:
+        int: Total de registros encontrados
+    """
+    
+    
+    try:
+        step = "url"
+        url = None
+        # Construindo a URL
+        url = (
+            "https://articlemeta.scielo.org/api/v1/%s/identifiers/?collection=%s&limit=1" % (resource_type, collection)
+        )
+        # Fazendo a requisição
+        step = "requests.get"
+        response = requests.get(url)
+
+        # Verificando se a requisição foi bem sucedida
+        step = "response.raise_for_status"
+        response.raise_for_status()
+        
+        # Convertendo a resposta para JSON
+        step = "response.json"
+        data = response.json()
+        
+        # Retornando o total
+        step = "total"
+        return data['meta']['total']
+        
+    except (KeyError, json.JSONDecodeError) as e:
+        logger.info("Erro ao processar o JSON: %s %s", str(type(e)), str(e))
+        return None
+
+    except Exception as e:
+        logger.info("Erro - %s - %s: %s %s", url, step, str(type(e)), str(e))
+        return None
+
+
+def log_totals(resource_type, collection):
+    if REQUESTS_IMPORTED:
+        total = get_am_total(resource_type, collection)
+        logger.info("%s - %s", resource_type, total)
+        return total
+    logger.error("%s - unable to get totals", resource_type)
+
+
 def log_numbers(name, am_items, legacy_items, legacy_database_name, new_items, to_remove_items):
     # log_numbers("documents", articlemeta_documents, legacy_documents, ctrl.database_name, new_documents, to_remove_documents)
     logger.info("%s - articlemeta = conjunto vazio ou status antes de processar", name)
@@ -100,7 +161,7 @@ def delele_items_incorrect(name, to_remove_items, SECURE_DELETIONS_NUMBER, force
     # parece incorreto porque apagar os registros sempre
     total_to_remove = len(to_remove_items)
     logger.info(
-        '%ss to be removed from articlemeta (%d)',
+        '%ss to remove from articlemeta (%d)',
         name, total_to_remove
     )
     skip_deletion = True
@@ -137,6 +198,14 @@ def delele_items_incorrect(name, to_remove_items, SECURE_DELETIONS_NUMBER, force
 
 def delele_items(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, rc_delete): 
     total_to_remove = len(to_remove_items)
+
+    if total_to_remove == 0:
+        logger.info(
+            'No %ss to be removed from articlemeta (%d)',
+            name, total_to_remove
+        )
+        return
+
     logger.info(
         'Found %ss to be removed from articlemeta (%d)',
         name, total_to_remove
@@ -374,6 +443,7 @@ def load_isis_records(collection, issns=None):
 
 
 def load_articlemeta_issues_ids(collection, issns=None):
+    log_totals("issue", collection)
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
     issues_pids = []
@@ -386,10 +456,12 @@ def load_articlemeta_issues_ids(collection, issns=None):
             )
             issues_pids.append('_'.join([issue.collection, issue.code, issue.processing_date.replace('-', '')]))
 
+    log_totals("issue", collection)
     return issues_pids
 
 
 def load_articlemeta_documents_ids(collection, issns=None):
+    log_totals("article", collection)
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
     documents_pids = []
@@ -401,11 +473,12 @@ def load_articlemeta_documents_ids(collection, issns=None):
                 '_'.join([document.collection, document.code, document.processing_date.replace('-', '')])
             )
             documents_pids.append('_'.join([document.collection, document.code, document.processing_date.replace('-', '')]))
-
+    log_totals("article", collection)
     return documents_pids
 
 
 def load_articlemeta_journals_ids(collection, issns=None):
+    log_totals("journal", collection)
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
     journals_pids = []
@@ -417,7 +490,7 @@ def load_articlemeta_journals_ids(collection, issns=None):
                 '_'.join([journal.collection, journal.code])
             )
             journals_pids.append('_'.join([journal.collection, journal.code, journal.processing_date.replace('-', '')]))
-
+    log_totals("journal", collection)
     return journals_pids
 
 
@@ -516,24 +589,31 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         log_numbers("journals", articlemeta_journals, legacy_journals, ctrl.database_name, new_journals, to_remove_journals)
 
         # Removing Documents
+        log_totals("article", collection)
         delele_items("document", to_remove_documents, SECURE_ARTICLE_DELETIONS_NUMBER, force_delete, rc.delete_document)
-
+        log_totals("article", collection)
         # Including and Updating Documents
         add_items("document", new_documents, ctrl.load_document, rc.add_document)
+        log_totals("article", collection)
 
         # Removing Journals
+        log_totals("journal", collection)
         delele_items("journal", to_remove_journals, SECURE_JOURNAL_DELETIONS_NUMBER, force_delete, rc.delete_journal)
-
+        log_totals("journal", collection)
         # Including and Updating Journals
         add_items("journal", new_journals, ctrl.load_journal, rc.add_journal)
+        jtotal = log_totals("journal", collection)
 
         # Removing Issues
+        log_totals("issue", collection)
         delele_items("issue", to_remove_issues, SECURE_ISSUE_DELETIONS_NUMBER, force_delete, rc.delete_issue)
-
+        log_totals("issue", collection)
         # Including and Updating Issues
         add_items("issue", new_issues, ctrl.load_issue, rc.add_issue)
+        log_totals("issue", collection)
 
-
+        if not jtotal:
+            logger.info("journal total: %s", len(load_articlemeta_journals_ids(collection)))
     logger.info('Process Isis2mongo Finished')
 
 
