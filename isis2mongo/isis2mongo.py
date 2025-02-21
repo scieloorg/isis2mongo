@@ -105,8 +105,6 @@ def get_am_total(resource_type, collection):
     Returns:
         int: Total de registros encontrados
     """
-    
-    
     try:
         step = "url"
         url = None
@@ -130,10 +128,6 @@ def get_am_total(resource_type, collection):
         step = "total"
         return data['meta']['total']
         
-    except (KeyError, json.JSONDecodeError) as e:
-        logger.info("Erro ao processar o JSON: %s %s", str(type(e)), str(e))
-        return None
-
     except Exception as e:
         logger.info("Erro - %s - %s: %s %s", url, step, str(type(e)), str(e))
         return None
