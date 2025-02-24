@@ -110,7 +110,7 @@ def get_am_total(resource_type, collection):
         url = None
         # Construindo a URL
         url = (
-            "https://articlemeta.scielo.org/api/v1/%s/identifiers/?collection=%s&limit=1" % (resource_type, collection)
+            "http://articlemeta.scielo.org/api/v1/%s/identifiers/?collection=%s&limit=1" % (resource_type, collection)
         )
         # Fazendo a requisição
         step = "requests.get"
