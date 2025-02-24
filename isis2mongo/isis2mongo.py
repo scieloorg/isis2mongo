@@ -488,6 +488,24 @@ def load_articlemeta_journals_ids(collection, issns=None):
     return journals_pids
 
 
+def log_totals_from_thrift(collection, name):
+    try:
+        if name not in ("documents", "issues", "journals"):
+            return
+
+        rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
+        if "journals":
+            rc_function = rc.journals
+        elif "issues":
+            rc_function = rc.issues
+        elif "documents":
+            rc_function = rc.documents
+        totals = len(rc_function(collection, only_identifiers=True))
+        logger.info("%s %s", name, totals)
+    except Exception as e:
+        logger.error("get_totals_from_thrift - %s: %s %s", name, str(type(e)), str(e))
+
+
 def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BULK_SIZE):
 
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
@@ -591,23 +609,21 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         log_totals("article", collection)
 
         # Removing Journals
-        log_totals("journal", collection)
+        log_totals_from_thrift(collection, "journals")
         delele_items("journal", to_remove_journals, SECURE_JOURNAL_DELETIONS_NUMBER, force_delete, rc.delete_journal)
-        log_totals("journal", collection)
+        log_totals_from_thrift(collection, "journals")
         # Including and Updating Journals
         add_items("journal", new_journals, ctrl.load_journal, rc.add_journal)
-        jtotal = log_totals("journal", collection)
+        log_totals_from_thrift(collection, "journals")
 
         # Removing Issues
-        log_totals("issue", collection)
+        log_totals_from_thrift(collection, "issues")
         delele_items("issue", to_remove_issues, SECURE_ISSUE_DELETIONS_NUMBER, force_delete, rc.delete_issue)
-        log_totals("issue", collection)
+        log_totals_from_thrift(collection, "issues")
         # Including and Updating Issues
         add_items("issue", new_issues, ctrl.load_issue, rc.add_issue)
-        log_totals("issue", collection)
+        log_totals_from_thrift(collection, "issues")
 
-        if not jtotal:
-            logger.info("journal total: %s", len(load_articlemeta_journals_ids(collection)))
     logger.info('Process Isis2mongo Finished')
 
 
