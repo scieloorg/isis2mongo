@@ -93,7 +93,7 @@ def get_field_value(record, field_key, default=None):
         return default
 
 
-def get_am_total(resource_type, collection):
+def get_am_total(url):
     """
     Obtém o total de registros da API do SciELO para um determinado tipo de recurso e coleção
     
@@ -106,12 +106,6 @@ def get_am_total(resource_type, collection):
         int: Total de registros encontrados
     """
     try:
-        step = "url"
-        url = None
-        # Construindo a URL
-        url = (
-            "http://articlemeta.scielo.org/api/v1/%s/identifiers/?collection=%s&limit=1" % (resource_type, collection)
-        )
         # Fazendo a requisição
         step = "requests.get"
         response = requests.get(url)
@@ -133,12 +127,18 @@ def get_am_total(resource_type, collection):
         return None
 
 
-def log_totals(resource_type, collection):
-    if REQUESTS_IMPORTED:
-        total = get_am_total(resource_type, collection)
-        logger.info("%s - %s", resource_type, total)
-        return total
-    logger.error("%s - unable to get totals", resource_type)
+def tracking_totals_from_web(resource_type, collection):
+    try:
+        if REQUESTS_IMPORTED:
+            url = (
+                "http://articlemeta.scielo.org/api/v1/%s/identifiers/?collection=%s&limit=1" % (resource_type, collection)
+            )
+            total = get_am_total(url)
+            logger.info("%s - %s", total, url)
+            return total
+        logger.error("%s %s - unable to get totals from web", resource_type, collection)
+    except Exception as e:
+        logger.exception(e)
 
 
 def log_numbers(name, am_items, legacy_items, legacy_database_name, new_items, to_remove_items):
@@ -230,6 +230,7 @@ def delele_items(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, r
         'Removing %ss (%d)',
         name, total_to_remove
     )
+    ndx = 0
     for ndx, item in enumerate(to_remove_items, 1):
         item = item.split('_')
         try:
@@ -243,6 +244,10 @@ def delele_items(name, to_remove_items, SECURE_DELETIONS_NUMBER, force_delete, r
             )
         except UnauthorizedAccess:
             logger.warning('Unauthorized access to remove itens, check the ArticleMeta admin token')
+    logger.info(
+        'Track: Removed %ss (%d)',
+        name, ndx
+    )
 
 
 def add_items(name, new_items, ctrl_load_item, rc_add_item): 
@@ -252,6 +257,7 @@ def add_items(name, new_items, ctrl_load_item, rc_add_item):
         name,
         len(new_items)
     )
+    ndx = 0
     for ndx, item in enumerate(new_items, 1):
         item = item.split('_')
         try:
@@ -288,6 +294,11 @@ def add_items(name, new_items, ctrl_load_item, rc_add_item):
             ndx, len(new_items),
             '_'.join([item[0], item[1]])
         )
+    logger.info(
+        'Track: %ss included into articlemeta (%d)',
+        name,
+        ndx
+    )
 
 
 def issue_pid(record):
@@ -377,6 +388,7 @@ def load_isis_records(collection, issns=None):
 
         temp_processing_date = [{'_': datetime.now().strftime("%Y%m%d")}]
 
+        ndx = 0
         for ndx, record in enumerate(isis_db.read(), 1):
             logger.debug('Reading record (%d) from iso (%s)', ndx, isofile)
 
@@ -434,10 +446,11 @@ def load_isis_records(collection, issns=None):
                 continue
 
             yield (rec_coll, record)
+        logger.info('Read record (%d) from iso (%s)', ndx, isofile)
 
 
 def load_articlemeta_issues_ids(collection, issns=None):
-    log_totals("issue", collection)
+    tracking_totals_from_web("issue", collection)
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
     issues_pids = []
@@ -450,12 +463,12 @@ def load_articlemeta_issues_ids(collection, issns=None):
             )
             issues_pids.append('_'.join([issue.collection, issue.code, issue.processing_date.replace('-', '')]))
 
-    log_totals("issue", collection)
+    tracking_totals_from_web("issue", collection)
     return issues_pids
 
 
 def load_articlemeta_documents_ids(collection, issns=None):
-    log_totals("article", collection)
+    tracking_totals_from_web("article", collection)
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
     documents_pids = []
@@ -467,12 +480,12 @@ def load_articlemeta_documents_ids(collection, issns=None):
                 '_'.join([document.collection, document.code, document.processing_date.replace('-', '')])
             )
             documents_pids.append('_'.join([document.collection, document.code, document.processing_date.replace('-', '')]))
-    log_totals("article", collection)
+    tracking_totals_from_web("article", collection)
     return documents_pids
 
 
 def load_articlemeta_journals_ids(collection, issns=None):
-    log_totals("journal", collection)
+    tracking_totals_from_web("journal", collection)
     rc = ThriftClient(domain=ARTICLEMETA_THRIFTSERVER, admintoken=ADMINTOKEN)
 
     journals_pids = []
@@ -484,11 +497,11 @@ def load_articlemeta_journals_ids(collection, issns=None):
                 '_'.join([journal.collection, journal.code])
             )
             journals_pids.append('_'.join([journal.collection, journal.code, journal.processing_date.replace('-', '')]))
-    log_totals("journal", collection)
+    tracking_totals_from_web("journal", collection)
     return journals_pids
 
 
-def log_totals_from_thrift(collection, name):
+def tracking_totals_from_thrift(collection, name):
     try:
         if name not in ("documents", "issues", "journals"):
             return
@@ -500,7 +513,7 @@ def log_totals_from_thrift(collection, name):
             rc_function = rc.issues
         elif "documents":
             rc_function = rc.documents
-        totals = len(rc_function(collection, only_identifiers=True))
+        totals = len(list(rc_function(collection, only_identifiers=True)))
         logger.info("%s %s", name, totals)
     except Exception as e:
         logger.error("get_totals_from_thrift - %s: %s %s", name, str(type(e)), str(e))
@@ -531,6 +544,9 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
     logger.info("articlemeta_documents (thrift ou conjunto vazio): %s", len(articlemeta_documents))
     logger.info("articlemeta_issues (thrift ou conjunto vazio): %s", len(articlemeta_issues))
     logger.info("articlemeta_journals (thrift ou conjunto vazio): %s", len(articlemeta_journals))
+    tracking_totals_from_web("article", collection)
+    tracking_totals_from_web("issue", collection)
+    tracking_totals_from_web("journal", collection)
 
     with DataBroker(uuid.uuid4()) as ctrl:
         update_issue_id = ''
@@ -539,20 +555,21 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         bulk = {}
 
         bulk_count = 0
-        total_bulked = 0
-        times = 1
+        tracking_bulk_totals = {}
         # lê os registros de todas os isos disponíveis: title.iso, artigo.iso, ...
         for coll, record in load_isis_records(collection, issns):
             bulk_count += 1
             bulk.setdefault(coll, [])
+            tracking_bulk_totals.setdefault(coll, 0)
             bulk[coll].append(record)
             if bulk_count == bulk_size:
-                total_bulked += bulk_count
-                logger.info("bulk_data: %s: %s, lote %s", coll, bulk_count, times)
-                times += 1
+                tracking_bulk_totals[coll] += bulk_count
                 bulk_count = 0
                 ctrl.bulk_data(dict(bulk))
                 bulk = {}
+
+                logger.info("bulk_data... %s", coll)
+                tracking_totals_from_web("journal", collection)
 
             # ctrl.write_record(coll, record)
             # Write field 4 in issue database
@@ -567,17 +584,30 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
                     record['v4'][0]['_']
                 ])
         # bulk residual data
-        total_bulked += bulk_count
-        logger.info("bulk_data: %s: %s, lote %s", coll, bulk_count, times)
-        logger.info("total_bulk_data: %s: %s", coll, total_bulked)
         ctrl.bulk_data(dict(bulk))
+        tracking_bulk_totals[coll] += bulk_count
+        for k, v in tracking_bulk_totals.items():
+            logger.info("tracking_bulk_totals: %s : %s", k, v)
+
+        tracking_totals_from_web("article", collection)
+        tracking_totals_from_web("issue", collection)
+        tracking_totals_from_web("journal", collection)
 
         logger.info('Updating fields metadata')
         ctrl.bulk_update_field('issues', fields_to_update_after_loading_documents)
+
+        tracking_totals_from_web("article", collection)
+        tracking_totals_from_web("issue", collection)
+        tracking_totals_from_web("journal", collection)
+
         logger.info('Loading legacy identifiers')
         legacy_documents = set(ctrl.articles_ids)
         legacy_issues = set(ctrl.issues_ids)
         legacy_journals = set(ctrl.journals_ids)
+
+        tracking_totals_from_web("article", collection)
+        tracking_totals_from_web("issue", collection)
+        tracking_totals_from_web("journal", collection)
 
         logger.info('Producing lists of differences between ArticleMeta and Legacy databases')
         new_documents = list(legacy_documents - articlemeta_documents)
@@ -601,28 +631,34 @@ def run(collection, issns, full_rebuild=False, force_delete=False, bulk_size=BUL
         log_numbers("journals", articlemeta_journals, legacy_journals, ctrl.database_name, new_journals, to_remove_journals)
 
         # Removing Documents
-        log_totals("article", collection)
+        tracking_totals_from_web("article", collection)
         delele_items("document", to_remove_documents, SECURE_ARTICLE_DELETIONS_NUMBER, force_delete, rc.delete_document)
-        log_totals("article", collection)
+        tracking_totals_from_web("article", collection)
         # Including and Updating Documents
         add_items("document", new_documents, ctrl.load_document, rc.add_document)
-        log_totals("article", collection)
+        tracking_totals_from_web("article", collection)
 
         # Removing Journals
-        log_totals_from_thrift(collection, "journals")
+        tracking_totals_from_thrift(collection, "journals")
+        tracking_totals_from_web("journal", collection)
         delele_items("journal", to_remove_journals, SECURE_JOURNAL_DELETIONS_NUMBER, force_delete, rc.delete_journal)
-        log_totals_from_thrift(collection, "journals")
+        tracking_totals_from_thrift(collection, "journals")
+        tracking_totals_from_web("journal", collection)
         # Including and Updating Journals
         add_items("journal", new_journals, ctrl.load_journal, rc.add_journal)
-        log_totals_from_thrift(collection, "journals")
+        tracking_totals_from_thrift(collection, "journals")
+        tracking_totals_from_web("journal", collection)
 
         # Removing Issues
-        log_totals_from_thrift(collection, "issues")
+        # tracking_totals_from_thrift(collection, "issues")
+        tracking_totals_from_web("issue", collection)
         delele_items("issue", to_remove_issues, SECURE_ISSUE_DELETIONS_NUMBER, force_delete, rc.delete_issue)
-        log_totals_from_thrift(collection, "issues")
+        # tracking_totals_from_thrift(collection, "issues")
+        tracking_totals_from_web("issue", collection)
         # Including and Updating Issues
         add_items("issue", new_issues, ctrl.load_issue, rc.add_issue)
-        log_totals_from_thrift(collection, "issues")
+        # tracking_totals_from_thrift(collection, "issues")
+        tracking_totals_from_web("issue", collection)
 
     logger.info('Process Isis2mongo Finished')
 
